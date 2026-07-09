@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
-import { mcpApi, projectsApi } from "@/lib/mcpAPI"
+import { mcpApi, projectsApi, DeployResponse } from "@/lib/mcpAPI"
 import { backendApi } from "@/lib/backendAPI"
 import { CreateProjectDialog, ProjectData } from "@/components/CreateProjectDialog"
 import { DeploymentSummaryDialog, DeploymentSummaryData } from "@/components/DeploymentSummaryDialog"
@@ -51,7 +51,23 @@ export default function Predict() {
         },
       }
 
-      const deployResponse = await mcpApi.deploy(deployData, state.token)
+      // 인프라(OpenStack) 미가동 시 배포는 실패해도 예측·추천 결과는 보여준다
+      // (데이터 연동 단계 — deploy/OpenStack 실배선은 후속 로드맵).
+      let deployResponse: DeployResponse
+      try {
+        deployResponse = await mcpApi.deploy(deployData, state.token)
+      } catch (deployErr: any) {
+        deployResponse = {
+          accepted: false,
+          message: `배포 보류: ${deployErr?.message ?? "인프라(OpenStack) 미가동"} — 예측·추천은 정상 완료되었습니다.`,
+          plan_id: null,
+          instance_id: null,
+          recommended_flavor: predictResponse?.recommendations?.flavor ?? null,
+          provider_flavor: null,
+          deployed_at: null,
+          instance: null,
+        } as unknown as DeployResponse
+      }
       const repoSlug = projectData.github_repo_url.replace(/\/$/, "").split("/").pop() || projectData.github_repo_url
       const lastDeployment = deployResponse.deployed_at || new Date().toISOString()
 
