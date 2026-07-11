@@ -1,10 +1,12 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-import { TrendingUp, TrendingDown, Minus } from "lucide-react"
+import { TrendingUp, TrendingDown } from "lucide-react"
 
 interface MetricCardProps {
   title: string
   value: string | number
+  /** 값 아래 한 줄 맥락 (예: "지난 24시간"). 가짜 증감률 대신 정직한 라벨. */
+  hint?: string
+  /** 선택적 추세 배지 — 실제 비교 대상이 있을 때만 쓴다. */
   change?: {
     value: number
     type: "increase" | "decrease" | "neutral"
@@ -13,57 +15,45 @@ interface MetricCardProps {
   className?: string
 }
 
-export function MetricCard({ title, value, change, icon, className }: MetricCardProps) {
-  const getTrendIcon = () => {
-    if (!change) return null
-    
-    switch (change.type) {
-      case "increase":
-        return <TrendingUp className="h-4 w-4 text-success" />
-      case "decrease":
-        return <TrendingDown className="h-4 w-4 text-destructive" />
-      case "neutral":
-        return <Minus className="h-4 w-4 text-muted-foreground" />
-    }
-  }
-
-  const getTrendColor = () => {
-    if (!change) return ""
-    
-    switch (change.type) {
-      case "increase":
-        return "text-success"
-      case "decrease":
-        return "text-destructive"
-      case "neutral":
-        return "text-muted-foreground"
-    }
-  }
-
+export function MetricCard({ title, value, hint, change, icon, className }: MetricCardProps) {
   return (
-    <Card className={cn("shadow-card transition-smooth hover:shadow-lg", className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {title}
-        </CardTitle>
-        <div className="text-muted-foreground">
+    <div
+      className={cn(
+        "group rounded-xl border border-border bg-card p-5 transition-smooth hover:border-primary/40 hover:shadow-card",
+        className
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-muted-foreground">{title}</span>
+        <span className="text-muted-foreground/70 transition-smooth group-hover:text-primary">
           {icon}
+        </span>
+      </div>
+
+      <div className="mt-3 tabular text-2xl font-semibold tracking-tight text-foreground">
+        {typeof value === "number" ? value.toLocaleString() : value}
+      </div>
+
+      {change ? (
+        <div
+          className={cn(
+            "mt-2 flex items-center gap-1 text-xs",
+            change.type === "increase" && "text-success",
+            change.type === "decrease" && "text-destructive",
+            change.type === "neutral" && "text-muted-foreground"
+          )}
+        >
+          {change.type === "increase" && <TrendingUp className="h-3.5 w-3.5" />}
+          {change.type === "decrease" && <TrendingDown className="h-3.5 w-3.5" />}
+          <span className="tabular">
+            {change.value > 0 ? "+" : ""}
+            {change.value}%
+          </span>
+          {hint && <span className="text-muted-foreground">· {hint}</span>}
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-foreground">
-          {typeof value === 'number' ? value.toLocaleString() : value}
-        </div>
-        {change && (
-          <div className={cn("flex items-center pt-1 text-xs", getTrendColor())}>
-            {getTrendIcon()}
-            <span className="ml-1">
-              {change.value > 0 ? '+' : ''}{change.value}% from last period
-            </span>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      ) : hint ? (
+        <div className="mt-2 text-xs text-muted-foreground">{hint}</div>
+      ) : null}
+    </div>
   )
 }
-

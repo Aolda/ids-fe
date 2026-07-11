@@ -20,7 +20,7 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         success: "bg-success text-success-foreground hover:bg-success/90 shadow-sm",
         warning: "bg-warning text-warning-foreground hover:bg-warning/90 shadow-sm",
-        hero: "gradient-primary text-white hover:shadow-glow shadow-lg font-semibold",
+        hero: "bg-primary text-primary-foreground font-semibold shadow-lift hover:bg-primary-hover",
         nav: "bg-transparent text-muted-foreground hover:text-foreground hover:bg-accent/50",
         dashboard: "bg-card hover:bg-accent border border-border shadow-card",
       },
