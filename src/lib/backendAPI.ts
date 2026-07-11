@@ -1,5 +1,7 @@
 // src/lib/backendAPI.ts
-// backend_api 서버(/api/predict 등)와 통신하는 전용 클라이언트
+// IDS 백엔드(POST /api/v1/plans)와 통신하는 예측 클라이언트.
+// 구 MCP backend_api(/api/predict)에서 IDS로 마이그레이션됨 — IDS 응답을 기존 PredictResponse
+// shape 로 어댑팅해 UI(Predict.tsx / DeploymentSummaryDialog) 변경을 최소화한다.
 
 import { BACKEND_API_BASE_URL } from "./config";
 
@@ -33,6 +35,13 @@ export interface PredictResponse {
   extracted_context: PredictExtractedContext;
   predictions: Record<string, any>;
   recommendations: PredictRecommendations;
+  // --- IDS 신규 필드(선택) — 자동배포 게이트/되묻기 UX 에 사용 가능 ---
+  automation_mode?: string; // auto | manual | block
+  extraction_status?: string; // complete | partial | needs_user_input | insufficient
+  context_confidence?: number;
+  missing_fields?: string[];
+  question?: string | null;
+  predictions_24h?: number[];
 }
 
 const handleResponse = async (res: Response) => {
@@ -49,25 +58,66 @@ const handleResponse = async (res: Response) => {
   return res.json();
 };
 
+// IDS /api/v1/plans 응답 → 기존 PredictResponse shape 로 어댑팅.
+// IDS 는 cold-start 시 expected_users/curr_* 를 null 로 줄 수 있어 방어값(0)으로 매핑한다
+// (DeploymentSummaryDialog 가 expected_users.toLocaleString() 을 호출 → null 이면 크래시).
+const adaptPlanToPredict = (plan: any): PredictResponse => {
+  const ctx = plan?.mcp_context ?? {};
+  const meta = plan?.repository_metadata ?? {};
+  const reasons: string[] = Array.isArray(plan?.flavor_reasons) ? plan.flavor_reasons : [];
+  const reasonText = reasons.length ? reasons.join(" · ") : undefined;
+
+  return {
+    success: true,
+    github_info: {
+      full_name: meta.full_name,
+      description: meta.description,
+      language: meta.language,
+      stars: meta.stars,
+      forks: meta.forks,
+    },
+    extracted_context: {
+      service_type: ctx.service_type ?? "web",
+      expected_users: ctx.expected_users ?? 0,
+      time_slot: ctx.time_slot ?? "normal",
+      runtime_env: ctx.runtime_env,
+      curr_cpu: ctx.curr_cpu ?? 0,
+      curr_mem: ctx.curr_mem ?? 0,
+      reasoning: plan?.question ?? plan?.notes ?? reasonText,
+    },
+    predictions: { values_24h: plan?.predictions_24h ?? [] },
+    recommendations: {
+      flavor: plan?.recommended_flavor ?? null,
+      cost_per_day: plan?.expected_cost_per_day ?? null,
+      notes: reasonText ?? null,
+    },
+    automation_mode: plan?.automation_mode,
+    extraction_status: plan?.extraction_status,
+    context_confidence: plan?.context_confidence,
+    missing_fields: plan?.missing_fields,
+    question: plan?.question ?? null,
+    predictions_24h: plan?.predictions_24h,
+  };
+};
+
 export const backendApi = {
-  // 자연어 + GitHub URL을 받아 backend_api의 /api/predict 호출
+  // 자연어 + GitHub URL → IDS POST /api/v1/plans (예측 + flavor 추천).
+  // 호출 시그니처는 유지(user_input) — 내부에서 IDS 필드명(natural_language)으로 매핑한다.
   predictWithNaturalLanguage: async (params: {
     github_url: string;
     user_input: string;
   }): Promise<PredictResponse> => {
-    const res = await fetch(`${BACKEND_API_BASE_URL}/api/predict`, {
+    const res = await fetch(`${BACKEND_API_BASE_URL}/api/v1/plans`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         github_url: params.github_url,
-        user_input: params.user_input,
+        natural_language: params.user_input,
       }),
     });
-    const data: PredictResponse = await handleResponse(res);
-    return data;
+    const plan = await handleResponse(res);
+    return adaptPlanToPredict(plan);
   },
 };
-
-

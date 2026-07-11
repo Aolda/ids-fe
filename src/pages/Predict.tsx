@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
-import { mcpApi, projectsApi } from "@/lib/mcpAPI"
+import { mcpApi, projectsApi, DeployResponse } from "@/lib/mcpAPI"
 import { backendApi } from "@/lib/backendAPI"
 import { CreateProjectDialog, ProjectData } from "@/components/CreateProjectDialog"
 import { DeploymentSummaryDialog, DeploymentSummaryData } from "@/components/DeploymentSummaryDialog"
@@ -101,7 +101,23 @@ export default function Predict() {
         },
       }
 
-      const deployResponse = await mcpApi.deploy(deployData, state.token)
+      // 인프라(OpenStack) 미가동 시 배포가 실패해도 예측·추천 결과는 보여준다
+      // (데이터 연동 단계 — deploy/OpenStack 실배선은 후속 로드맵).
+      let deployResponse: DeployResponse
+      try {
+        deployResponse = await mcpApi.deploy(deployData, state.token)
+      } catch (deployErr) {
+        deployResponse = {
+          accepted: false,
+          message: `배포 보류: ${
+            deployErr instanceof Error ? deployErr.message : "인프라(OpenStack) 미가동"
+          } — 예측·추천은 정상 완료되었습니다.`,
+          plan_id: null,
+          instance_id: null,
+          deployed_at: null,
+          instance: null,
+        }
+      }
       const repoSlug =
         projectData.github_repo_url.replace(/\/$/, "").split("/").pop() ||
         projectData.github_repo_url
@@ -143,16 +159,19 @@ export default function Predict() {
       setIsSummaryOpen(true)
 
       const flavor = predictResponse?.recommendations?.flavor
+      const deployed = deployResponse.accepted
       const instanceLabel =
         deployResponse.instance?.name || deployResponse.instance_id || "할당 대기 중"
 
       toast({
-        title: "예측 및 배포가 완료되었습니다",
+        title: deployed ? "예측 및 배포가 완료되었습니다" : "예측 완료 · 배포 보류",
         description: [
           flavor
             ? `추천 등급: ${flavor}.`
             : "자연어 요구사항을 기반으로 리소스를 예측했습니다.",
-          `생성된 VM: ${instanceLabel}. 세부 정보는 요약 창에서 확인하세요.`,
+          deployed
+            ? `생성된 VM: ${instanceLabel}. 세부 정보는 요약 창에서 확인하세요.`
+            : "인프라 연동 후 배포됩니다. 예측·추천 결과는 요약 창에서 확인하세요.",
         ].join(" "),
       })
     } catch (err) {
