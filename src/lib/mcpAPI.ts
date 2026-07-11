@@ -7,7 +7,7 @@ export interface InstanceAddressEntry {
   type?: string;
   version?: number;
   ['OS-EXT-IPS:type']?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export type InstanceAddresses = Record<string, InstanceAddressEntry[]>;
@@ -57,7 +57,15 @@ const handleResponse = async (res: Response) => {
 export const mcpApi = {
   // Context JSON을 예쁘게 포장해서 MCP로 전송
   // 배포는 MCP -> mcp_core -> CI/CD로 자동 처리됨
-  sendContextToMCP: async (payload: any, token: string) => {
+  sendContextToMCP: async (
+    payload: {
+      service_id: string
+      metric_name: string
+      context: { github_url: string }
+      requirements: string
+    },
+    token: string
+  ) => {
     // Context JSON을 예쁘게 포장해서 MCP로 전송
     // 프론트엔드에서는 GitHub URL만 전달하고, 나머지 필드들은 MCP가 자동으로 채움
     // 자연어 요청사항은 별도 필드로 전송
@@ -71,7 +79,7 @@ export const mcpApi = {
       requirements: payload.requirements, // 자연어 요청사항 (string으로 래핑)
     }
 
-    const res = await fetch(`${API_BASE_URL}/plans`, {
+    const res = await fetch(`${API_BASE_URL}/api/v1/plans`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -89,9 +97,9 @@ export const mcpApi = {
     repo_id?: string;
     image_tag?: string;
     plan_id?: string;
-    env_config?: Record<string, any>;
+    env_config?: Record<string, unknown>;
   }, token?: string): Promise<DeployResponse> => {
-    const res = await fetch(`${DEPLOY_API_BASE_URL}/deploy`, {
+    const res = await fetch(`${DEPLOY_API_BASE_URL}/api/v1/deploy`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -103,18 +111,17 @@ export const mcpApi = {
     return data;
   },
 
-  // 리소스 삭제
+  // 리소스 삭제 — 백엔드: DELETE /api/v1/deploy/{instance_id} (Bearer 필요).
+  // service_id는 백엔드가 사용하지 않지만 호출부 호환을 위해 시그니처는 유지한다.
   destroy: async (destroyData: {
     service_id: string;
     instance_id: string;
   }, token: string) => {
-    const res = await fetch(`${API_BASE_URL}/destroy`, {
-      method: 'POST',
+    const res = await fetch(`${API_BASE_URL}/api/v1/deploy/${destroyData.instance_id}`, {
+      method: 'DELETE',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(destroyData)
+      }
     });
     return handleResponse(res);
   }
@@ -140,7 +147,7 @@ export interface ProjectsResponse {
 export const projectsApi = {
   // 프로젝트 목록 조회
   getProjects: async (token: string): Promise<ProjectsResponse> => {
-    const res = await fetch(`${API_BASE_URL}/projects`, {
+    const res = await fetch(`${API_BASE_URL}/api/v1/projects`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -159,7 +166,7 @@ export const projectsApi = {
     service_id?: string | null;
     instance_id?: string | null;
   }, token: string): Promise<Project> => {
-    const res = await fetch(`${API_BASE_URL}/projects`, {
+    const res = await fetch(`${API_BASE_URL}/api/v1/projects`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -172,7 +179,7 @@ export const projectsApi = {
 
   // 프로젝트 상세 조회
   getProject: async (projectId: number, token: string): Promise<Project> => {
-    const res = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+    const res = await fetch(`${API_BASE_URL}/api/v1/projects/${projectId}`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -194,7 +201,7 @@ export const projectsApi = {
     },
     token: string
   ): Promise<Project> => {
-    const res = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+    const res = await fetch(`${API_BASE_URL}/api/v1/projects/${projectId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -207,7 +214,7 @@ export const projectsApi = {
 
   // 프로젝트 삭제
   deleteProject: async (projectId: number, token: string): Promise<void> => {
-    const res = await fetch(`${API_BASE_URL}/projects/${projectId}`, {
+    const res = await fetch(`${API_BASE_URL}/api/v1/projects/${projectId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
