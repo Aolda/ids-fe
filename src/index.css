@@ -2,128 +2,118 @@
 @tailwind components;
 @tailwind utilities;
 
-/* LaunchA Cloud Design System - Professional CI/CD Dashboard */
+/* ──────────────────────────────────────────────────────────────
+   launcha — design system
+   Signal-cyan on deep slate. Hairline borders, monospace data,
+   restraint over glow. Dark is the primary surface.
+   ────────────────────────────────────────────────────────────── */
 
 @layer base {
   :root {
-    /* Core Colors - Inspired by AppPaaS */
-    --background: 0 0% 100%;
-    --foreground: 220 15% 15%;
+    /* Light surface — clean, warm-cool near-white */
+    --background: 210 24% 99%;
+    --foreground: 224 24% 12%;
 
     --card: 0 0% 100%;
-    --card-foreground: 220 15% 15%;
+    --card-foreground: 224 24% 12%;
+    --elevated: 210 22% 97%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 15%;
+    --popover-foreground: 224 24% 12%;
 
-    /* Primary Brand Colors - Blue like AppPaaS */
-    --primary: 220 91% 50%;
+    /* Brand — signal cyan (darkened for AA on white: ~5.2:1) */
+    --primary: 192 84% 31%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 220 91% 45%;
-    --primary-glow: 220 91% 55%;
+    --primary-hover: 192 84% 26%;
 
-    /* Secondary Colors */
-    --secondary: 220 13% 95%;
-    --secondary-foreground: 220 15% 25%;
+    --secondary: 214 18% 95%;
+    --secondary-foreground: 224 20% 22%;
 
-    --muted: 220 13% 96%;
-    --muted-foreground: 220 10% 45%;
+    --muted: 214 18% 95%;
+    --muted-foreground: 220 10% 42%;
 
-    --accent: 220 13% 95%;
-    --accent-foreground: 220 15% 25%;
+    --accent: 214 18% 94%;
+    --accent-foreground: 224 20% 22%;
 
-    /* Status Colors */
-    --success: 142 76% 36%;
+    --success: 152 60% 30%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 33 92% 40%;
     --warning-foreground: 0 0% 100%;
-    --destructive: 0 84% 60%;
+    --destructive: 358 68% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Layout Colors */
-    --border: 220 13% 91%;
-    --input: 220 13% 95%;
-    --ring: 220 91% 50%;
+    --border: 220 16% 90%;
+    --input: 220 16% 90%;
+    --ring: 192 84% 31%;
 
-    /* Design Tokens */
-    --radius: 0.75rem;
-    
-    /* Custom Design Elements */
-    --gradient-primary: linear-gradient(135deg, hsl(220 91% 50%), hsl(220 91% 55%));
-    --gradient-hero: linear-gradient(135deg, hsl(220 91% 50%), hsl(240 90% 55%));
-    --shadow-glow: 0 0 30px hsl(220 91% 50% / 0.2);
-    --shadow-card: 0 1px 3px 0 hsl(220 13% 91% / 0.1), 0 1px 2px -1px hsl(220 13% 91% / 0.1);
-    
-    /* Animation */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --radius: 0.625rem;
 
-    --sidebar-background: 0 0% 98%;
+    --grid-line: 220 16% 92%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    --shadow-card: 0 1px 2px 0 hsl(220 20% 20% / 0.05), 0 1px 3px -1px hsl(220 20% 20% / 0.04);
+    --shadow-lift: 0 10px 30px -12px hsl(220 30% 20% / 0.16);
+    --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 210 22% 98%;
+    --sidebar-foreground: 224 12% 28%;
+    --sidebar-primary: 192 84% 31%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 214 18% 94%;
+    --sidebar-accent-foreground: 224 20% 22%;
+    --sidebar-border: 220 16% 90%;
+    --sidebar-ring: 192 84% 31%;
   }
 
   .dark {
-    /* Dark Mode - Professional Dashboard */
-    --background: 220 25% 8%;
-    --foreground: 0 0% 95%;
+    /* Deep slate near-black — the primary surface */
+    --background: 224 20% 6%;
+    --foreground: 210 22% 96%;
 
-    --card: 220 25% 10%;
-    --card-foreground: 0 0% 95%;
+    --card: 224 18% 9%;
+    --card-foreground: 210 22% 96%;
+    --elevated: 223 16% 12%;
 
-    --popover: 220 25% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 224 18% 9%;
+    --popover-foreground: 210 22% 96%;
 
-    --primary: 220 91% 55%;
-    --primary-foreground: 220 25% 8%;
-    --primary-hover: 220 91% 50%;
-    --primary-glow: 220 91% 60%;
+    /* Brand — signal cyan (bright on dark) */
+    --primary: 187 90% 54%;
+    --primary-foreground: 210 60% 7%;
+    --primary-hover: 187 90% 60%;
 
-    --secondary: 220 20% 15%;
-    --secondary-foreground: 0 0% 85%;
+    --secondary: 223 14% 14%;
+    --secondary-foreground: 210 16% 88%;
 
-    --muted: 220 20% 15%;
-    --muted-foreground: 220 10% 65%;
+    --muted: 223 14% 14%;
+    --muted-foreground: 218 12% 60%;
 
-    --accent: 220 20% 15%;
-    --accent-foreground: 0 0% 85%;
+    --accent: 223 14% 15%;
+    --accent-foreground: 210 16% 88%;
 
-    /* Dark Mode Status Colors */
-    --success: 142 71% 45%;
-    --success-foreground: 220 25% 8%;
-    --warning: 38 95% 56%;
-    --warning-foreground: 220 25% 8%;
-    --destructive: 0 91% 71%;
-    --destructive-foreground: 220 25% 8%;
+    --success: 152 58% 47%;
+    --success-foreground: 210 60% 7%;
+    --warning: 38 92% 56%;
+    --warning-foreground: 210 60% 7%;
+    --destructive: 358 74% 62%;
+    --destructive-foreground: 210 60% 7%;
 
-    --border: 220 20% 18%;
-    --input: 220 20% 15%;
-    --ring: 220 91% 55%;
-    
-    /* Dark Mode Design Elements */
-    --gradient-primary: linear-gradient(135deg, hsl(220 91% 55%), hsl(220 91% 60%));
-    --gradient-hero: linear-gradient(135deg, hsl(220 91% 55%), hsl(240 90% 60%));
-    --shadow-glow: 0 0 40px hsl(220 91% 55% / 0.3);
-    --shadow-card: 0 2px 8px 0 hsl(220 25% 5% / 0.3), 0 1px 3px -1px hsl(220 25% 5% / 0.3);
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 223 13% 16%;
+    --input: 223 13% 15%;
+    --ring: 187 90% 54%;
+
+    --grid-line: 223 13% 14%;
+
+    --shadow-card: 0 1px 2px 0 hsl(224 40% 2% / 0.5), 0 1px 3px -1px hsl(224 40% 2% / 0.4);
+    --shadow-lift: 0 16px 40px -18px hsl(224 60% 2% / 0.7);
+
+    --sidebar-background: 224 18% 8%;
+    --sidebar-foreground: 210 16% 82%;
+    --sidebar-primary: 187 90% 54%;
+    --sidebar-primary-foreground: 210 60% 7%;
+    --sidebar-accent: 223 14% 14%;
+    --sidebar-accent-foreground: 210 16% 88%;
+    --sidebar-border: 223 13% 16%;
+    --sidebar-ring: 187 90% 54%;
   }
 }
 
@@ -132,16 +122,26 @@
     @apply border-border;
   }
 
+  html {
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
     @apply bg-background text-foreground font-sans;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'ss01';
   }
-  
+
   .font-mono {
     font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
   }
 
-  /* Input 스타일 개선 - Dark mode에서도 시인성 확보 */
+  /* Headings read tighter — an intentional, editorial feel */
+  h1, h2, h3 {
+    letter-spacing: -0.02em;
+  }
+
   input[type="text"],
   input[type="email"],
   input[type="password"],
@@ -158,42 +158,125 @@
   textarea::placeholder {
     @apply text-muted-foreground;
   }
-  
-  /* Custom Scrollbar */
+
   ::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
+    height: 8px;
   }
-  
   ::-webkit-scrollbar-track {
-    @apply bg-muted;
+    background: transparent;
   }
-  
   ::-webkit-scrollbar-thumb {
-    @apply bg-muted-foreground/30 rounded-full;
+    @apply bg-muted-foreground/25 rounded-full;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
-  
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/50;
+    @apply bg-muted-foreground/40;
+  }
+
+  ::selection {
+    background: hsl(var(--primary) / 0.25);
   }
 }
 
-/* Custom Component Styles */
-.glass-card {
-  background: hsl(var(--card) / 0.7);
-  backdrop-filter: blur(10px);
-  border: 1px solid hsl(var(--border) / 0.5);
+/* ── Utilities ─────────────────────────────────────────────── */
+
+/* Monospace eyebrow label — the kind of small detail a person adds */
+.eyebrow {
+  @apply font-mono text-xs uppercase text-muted-foreground;
+  letter-spacing: 0.22em;
 }
 
-.gradient-primary {
-  background: var(--gradient-primary);
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-family: 'JetBrains Mono', 'Monaco', monospace;
 }
 
-.shadow-glow {
-  box-shadow: var(--shadow-glow);
+/* Faint blueprint grid — hero backdrop texture */
+.grid-texture {
+  background-image:
+    linear-gradient(hsl(var(--grid-line)) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--grid-line)) 1px, transparent 1px);
+  background-size: 56px 56px;
+  background-position: center;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
 }
 
-.transition-smooth {
-  transition: var(--transition-smooth);
+/* Hairline accent seam — a 1px cyan rule people use to divide sections */
+.seam {
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.5), transparent);
+  height: 1px;
+}
+
+/* Ambient aurora — soft cyan light sources, not a discrete blob.
+   Two low-opacity radials read as room lighting behind the hero. */
+.aurora {
+  background:
+    radial-gradient(42rem 24rem at 12% -12%, hsl(var(--primary) / 0.16), transparent 60%),
+    radial-gradient(40rem 22rem at 88% -6%, hsl(var(--primary) / 0.10), transparent 55%);
+}
+
+/* Film grain — a hair of texture that makes flat fills feel materially crafted */
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Gradient top-hairline on a card — a 1px lit edge that adds real depth */
+.card-lit {
+  position: relative;
+}
+.card-lit::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.45), transparent);
 }
 
 
+.shadow-card { box-shadow: var(--shadow-card); }
+.shadow-lift { box-shadow: var(--shadow-lift); }
+.transition-smooth { transition: var(--transition-smooth); }
+
+/* Live status dot with a calm breathing pulse — halo inherits the dot's color */
+.live-dot {
+  position: relative;
+  color: hsl(var(--success));
+}
+.live-dot::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  background: currentColor;
+  opacity: 0.5;
+  animation: live-pulse 2.4s ease-out infinite;
+}
+@keyframes live-pulse {
+  0%   { transform: scale(0.9); opacity: 0.55; }
+  70%  { transform: scale(2.2); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* 모션 민감 사용자 보호 — 무한 펄스 정지, 페이드는 최종 상태로 고정 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .animate-fade-up {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .live-dot::after {
+    animation: none;
+  }
+}

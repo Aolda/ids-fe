@@ -1,156 +1,143 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle, XCircle, Clock, GitCommit, AlertTriangle } from "lucide-react"
+import {
+  CheckCircle,
+  AlertTriangle,
+  Activity,
+  Layers,
+  Rocket,
+  Search,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface ActivityItem {
   id: string
-  type: "deployment" | "build" | "error" | "commit"
-  status: "success" | "failed" | "pending" | "warning"
+  type: "deploy" | "flavor" | "anomaly" | "prediction"
+  status: "success" | "warning" | "info"
   title: string
   description: string
   timestamp: string
   project?: string
 }
 
+/* IDS 도메인 이벤트 (배선 전까지 데모용) */
 const mockActivities: ActivityItem[] = [
   {
     id: "1",
-    type: "deployment",
+    type: "deploy",
     status: "success",
-    title: "Deployment completed",
-    description: "Production deployment of ecommerce-api v2.1.0",
-    timestamp: "2 minutes ago",
-    project: "ecommerce-api"
+    title: "배포 완료",
+    description: "shop-api를 aolda.large로 배포했습니다 (4 vCPU · 8GB).",
+    timestamp: "2분 전",
+    project: "shop-api",
   },
   {
     id: "2",
-    type: "build",
-    status: "failed",
-    title: "Build failed",
-    description: "Build failed due to test failures in user module",
-    timestamp: "5 minutes ago",
-    project: "user-dashboard"
+    type: "anomaly",
+    status: "warning",
+    title: "이상 감지 · RCA",
+    description: "트래픽 급증으로 CPU 96% 도달. opensre가 근본원인을 분석 중입니다.",
+    timestamp: "18분 전",
+    project: "event-web",
   },
   {
     id: "3",
-    type: "commit",
-    status: "success",
-    title: "New commit detected",
-    description: "feat: add user authentication middleware",
-    timestamp: "12 minutes ago",
-    project: "auth-service"
+    type: "flavor",
+    status: "info",
+    title: "등급 재추천",
+    description: "관측 수요가 예측 대비 상승 — small → medium 상향을 제안합니다.",
+    timestamp: "41분 전",
+    project: "docs-portal",
   },
   {
     id: "4",
-    type: "deployment",
+    type: "prediction",
     status: "success",
-    title: "Deployment completed",
-    description: "Staging deployment of payment-gateway v1.4.2",
-    timestamp: "1 hour ago",
-    project: "payment-gateway"
+    title: "24시간 예측 생성",
+    description: "예측 피크 0.90. 저녁 시간대 수요 집중이 예상됩니다.",
+    timestamp: "1시간 전",
+    project: "shop-api",
   },
   {
     id: "5",
-    type: "error",
-    status: "warning",
-    title: "High memory usage detected",
-    description: "Memory usage exceeded 85% threshold on production server",
-    timestamp: "2 hours ago",
-    project: "analytics-service"
-  }
+    type: "deploy",
+    status: "success",
+    title: "배포 완료",
+    description: "docs-portal을 aolda.small로 배포했습니다 (1 vCPU · 2GB).",
+    timestamp: "3시간 전",
+    project: "docs-portal",
+  },
 ]
 
-export function ActivityLog() {
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "success":
-        return <CheckCircle className="h-4 w-4 text-success" />
-      case "failed":
-        return <XCircle className="h-4 w-4 text-destructive" />
-      case "pending":
-        return <Clock className="h-4 w-4 text-warning" />
-      case "warning":
-        return <AlertTriangle className="h-4 w-4 text-warning" />
-      default:
-        return <Clock className="h-4 w-4 text-muted-foreground" />
-    }
-  }
+const typeIcon: Record<ActivityItem["type"], React.ReactNode> = {
+  deploy: <Rocket className="h-4 w-4" />,
+  anomaly: <Search className="h-4 w-4" />,
+  flavor: <Layers className="h-4 w-4" />,
+  prediction: <Activity className="h-4 w-4" />,
+}
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "commit":
-        return <GitCommit className="h-4 w-4" />
-      default:
-        return null
-    }
-  }
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "success":
-        return <Badge variant="outline" className="bg-success/10 text-success border-success/20">Success</Badge>
-      case "failed":
-        return <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">Failed</Badge>
-      case "pending":
-        return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Pending</Badge>
-      case "warning":
-        return <Badge variant="outline" className="bg-warning/10 text-warning border-warning/20">Warning</Badge>
-      default:
-        return <Badge variant="outline">Unknown</Badge>
-    }
-  }
-
+function StatusBadge({ status }: { status: ActivityItem["status"] }) {
+  const map = {
+    success: { cls: "bg-success/10 text-success border-success/20", label: "완료", icon: CheckCircle },
+    warning: { cls: "bg-warning/10 text-warning border-warning/20", label: "주의", icon: AlertTriangle },
+    info: { cls: "bg-primary/10 text-primary border-primary/20", label: "제안", icon: Layers },
+  }[status]
+  const Icon = map.icon
   return (
-    <Card className="shadow-card">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold flex items-center gap-2">
-          <Clock className="h-5 w-5 text-primary" />
-          Recent Activity
+    <Badge variant="outline" className={cn("gap-1 font-medium", map.cls)}>
+      <Icon className="h-3 w-3" />
+      {map.label}
+    </Badge>
+  )
+}
+
+export function ActivityLog() {
+  return (
+    <Card className="border-border shadow-card">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base font-semibold">
+          <Activity className="h-4 w-4 text-primary" />
+          최근 활동
         </CardTitle>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="space-y-0">
-          {mockActivities.map((activity, index) => (
+        {mockActivities.map((a, i) => (
+          <div
+            key={a.id}
+            className={cn(
+              "flex items-start gap-4 px-6 py-4 transition-smooth hover:bg-accent/40",
+              i !== mockActivities.length - 1 && "border-b border-border"
+            )}
+          >
             <div
-              key={activity.id}
               className={cn(
-                "flex items-start space-x-4 p-4 border-l-2 transition-smooth hover:bg-accent/50",
-                activity.status === "success" && "border-l-success",
-                activity.status === "failed" && "border-l-destructive",
-                activity.status === "warning" && "border-l-warning",
-                activity.status === "pending" && "border-l-primary",
-                index !== mockActivities.length - 1 && "border-b border-border"
+                "mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-lg border",
+                a.status === "success" && "border-success/20 bg-success/10 text-success",
+                a.status === "warning" && "border-warning/20 bg-warning/10 text-warning",
+                a.status === "info" && "border-primary/20 bg-primary/10 text-primary"
               )}
             >
-              <div className="flex-shrink-0 mt-0.5">
-                {getStatusIcon(activity.status)}
+              {typeIcon[a.type]}
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-2">
+                <h4 className="text-sm font-medium text-foreground">{a.title}</h4>
+                <StatusBadge status={a.status} />
               </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
-                    {activity.title}
-                    {getTypeIcon(activity.type)}
-                  </h4>
-                  {getStatusBadge(activity.status)}
-                </div>
-                <p className="text-sm text-muted-foreground mb-2">
-                  {activity.description}
-                </p>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{activity.timestamp}</span>
-                  {activity.project && (
-                    <Badge variant="secondary" className="text-xs">
-                      {activity.project}
-                    </Badge>
-                  )}
-                </div>
+              <p className="mt-1 text-sm text-muted-foreground">{a.description}</p>
+              <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="font-mono">{a.timestamp}</span>
+                {a.project && (
+                  <>
+                    <span className="text-border">·</span>
+                    <span className="font-mono text-foreground/70">{a.project}</span>
+                  </>
+                )}
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </CardContent>
     </Card>
   )
 }
-

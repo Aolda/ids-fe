@@ -281,7 +281,7 @@ export default function Settings() {
                     <div className="space-y-3">
                       <div className="flex items-center justify-between p-3 border border-border rounded-lg">
                         <div>
-                          <p className="font-medium font-mono">LaunchA_*****************************</p>
+                          <p className="font-medium font-mono">launcha_*****************************</p>
                           <p className="text-sm text-muted-foreground">Created 2 days ago</p>
                         </div>
                         <Button variant="outline" size="sm">

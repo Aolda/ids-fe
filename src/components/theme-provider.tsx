@@ -23,7 +23,7 @@ const ThemeProviderContext = createContext<ThemeProviderState>(initialState)
 export function ThemeProvider({
   children,
   defaultTheme = "dark", // Default to dark mode as requested
-  storageKey = "LaunchA-ui-theme",
+  storageKey = "launcha-ui-theme",
   ...props
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
