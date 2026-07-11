@@ -55,18 +55,55 @@ function LandingHeader() {
   )
 }
 
-/* 히어로 우측 제품 미리보기 — 실제 파이프라인(입력→24h 예측→flavor→배포)을 압축해 보여준다 */
+/* 24h 리소스 수요 예측 목업 — 히어로/벤토에서 재사용 */
 const demandCurve = [
   0.28, 0.24, 0.21, 0.19, 0.2, 0.26, 0.35, 0.48, 0.57, 0.61, 0.59, 0.63, 0.68,
   0.66, 0.62, 0.6, 0.64, 0.71, 0.79, 0.86, 0.9, 0.83, 0.62, 0.4,
 ].map((v, h) => ({ h, score: v }))
 const peakIndex = demandCurve.reduce((m, d, i, a) => (d.score > a[m].score ? i : m), 0)
 
+/* 장식용 스파크라인 — 값은 인접 텍스트에 이미 있으므로 AT 에서는 숨긴다 */
+function DemandArea() {
+  return (
+    <div className="h-full w-full" aria-hidden="true">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={demandCurve} margin={{ top: 8, right: 4, bottom: 0, left: 4 }}>
+          <defs>
+            <linearGradient id="heroFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <XAxis dataKey="h" hide />
+          <YAxis hide domain={[0, 1]} />
+          <Area
+            type="monotone"
+            dataKey="score"
+            stroke="hsl(var(--primary))"
+            strokeWidth={2}
+            fill="url(#heroFill)"
+            isAnimationActive={false}
+          />
+          <ReferenceDot
+            x={peakIndex}
+            y={demandCurve[peakIndex].score}
+            r={4}
+            fill="hsl(var(--primary))"
+            stroke="hsl(var(--card))"
+            strokeWidth={2}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
+
+/* 히어로 우측 제품 미리보기 — 실제 파이프라인(입력→24h 예측→flavor→배포)을 압축 */
 function HeroPreview() {
   return (
     <div className="relative animate-fade-up [animation-delay:120ms]">
-      <div className="overflow-hidden rounded-xl border border-border bg-card shadow-lift">
-        {/* 카드 헤더 — OS 창 흉내 대신 제품 상태를 보여준다 */}
+      <div className="card-lit overflow-hidden rounded-xl border border-border bg-card shadow-lift">
+        {/* 이 카드에서 유일하게 살아있는 상태 표시 = live 펄스 */}
         <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
           <span className="font-mono text-xs text-muted-foreground">launcha · 예측</span>
           <span className="flex items-center gap-1.5 font-mono text-[11px] text-success">
@@ -76,7 +113,6 @@ function HeroPreview() {
         </div>
 
         <div className="space-y-5 p-5">
-          {/* 입력 라인 */}
           <div className="rounded-lg border border-border bg-background/60 p-3">
             <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
               <Github className="h-3.5 w-3.5" />
@@ -87,7 +123,6 @@ function HeroPreview() {
             </p>
           </div>
 
-          {/* 24h 예측 곡선 */}
           <div>
             <div className="mb-2 flex items-center justify-between">
               <span className="eyebrow">리소스 수요 예측 · 24H</span>
@@ -96,38 +131,10 @@ function HeroPreview() {
               </span>
             </div>
             <div className="h-24">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={demandCurve} margin={{ top: 8, right: 4, bottom: 0, left: 4 }}>
-                  <defs>
-                    <linearGradient id="heroFill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="h" hide />
-                  <YAxis hide domain={[0, 1]} />
-                  <Area
-                    type="monotone"
-                    dataKey="score"
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    fill="url(#heroFill)"
-                    isAnimationActive={false}
-                  />
-                  <ReferenceDot
-                    x={peakIndex}
-                    y={demandCurve[peakIndex].score}
-                    r={4}
-                    fill="hsl(var(--primary))"
-                    stroke="hsl(var(--card))"
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+              <DemandArea />
             </div>
           </div>
 
-          {/* 결정 + 배포 결과 */}
           <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-background/60 p-3">
             <div>
               <div className="eyebrow mb-1">추천 등급</div>
@@ -139,7 +146,7 @@ function HeroPreview() {
               </div>
             </div>
             <div className="flex items-center gap-2 text-sm text-success">
-              <span className="live-dot h-2 w-2 rounded-full bg-success" />
+              <span className="h-2 w-2 rounded-full bg-success" />
               배포 완료
             </div>
           </div>
@@ -151,16 +158,17 @@ function HeroPreview() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden border-b border-border">
-      <div className="grid-texture pointer-events-none absolute inset-0 -z-10 opacity-60" />
+    <section className="grain relative isolate overflow-hidden border-b border-border">
+      <div className="aurora pointer-events-none absolute inset-0 -z-10" />
+      <div className="grid-texture pointer-events-none absolute inset-0 -z-10 opacity-50" />
       <div className="container mx-auto grid items-center gap-14 px-4 py-20 lg:grid-cols-2 lg:py-28">
         <div className="animate-fade-up">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1">
-            <span className="live-dot h-1.5 w-1.5 rounded-full bg-primary text-primary" />
+          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 backdrop-blur">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
             <span className="eyebrow text-foreground/80">Intelligent Deployment System</span>
           </div>
 
-          <h1 className="text-balance text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+          <h1 className="text-balance text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl xl:text-[4.25rem]">
             GitHub 주소와 한 문장이면,
             <br />
             배포는 <span className="text-primary">알아서</span> 끝냅니다.
@@ -198,26 +206,10 @@ function Hero() {
 }
 
 const steps = [
-  {
-    no: "01",
-    title: "입력",
-    body: "GitHub 주소와 한 문장의 요구사항. 그게 전부입니다.",
-  },
-  {
-    no: "02",
-    title: "예측",
-    body: "저장소를 분석하고 LSTM이 앞으로 24시간의 수요 곡선을 그립니다.",
-  },
-  {
-    no: "03",
-    title: "결정",
-    body: "예측 피크·맥락·가용량을 규칙으로 계산해 VM 등급을 확정합니다.",
-  },
-  {
-    no: "04",
-    title: "배포·관측",
-    body: "OpenStack에 배포하고, 이상 징후를 잡아 알려주고, 재추천합니다.",
-  },
+  { no: "01", title: "입력", body: "GitHub 주소와 한 문장의 요구사항. 그게 전부입니다." },
+  { no: "02", title: "예측", body: "저장소를 분석하고 LSTM이 앞으로 24시간의 수요 곡선을 그립니다." },
+  { no: "03", title: "결정", body: "예측 피크·맥락·가용량을 규칙으로 계산해 VM 등급을 확정합니다." },
+  { no: "04", title: "배포·관측", body: "OpenStack에 배포하고, 이상 징후를 잡아 알려주고, 재추천합니다." },
 ]
 
 function HowItWorks() {
@@ -249,26 +241,103 @@ function HowItWorks() {
   )
 }
 
-const pillars = [
-  {
-    icon: Activity,
-    title: "피크를 놓치지 않는 예측",
-    body: "평균 정확도가 아니라 장애를 부르는 피크에 맞춥니다. 24시간 수요를 예측하고 p90 피크를 기준으로 여유를 잡습니다.",
-    tag: "LSTM · 24h",
-  },
-  {
-    icon: Boxes,
-    title: "결정론적 등급 결정",
-    body: "AI는 요구사항만 해석합니다. VM 등급은 예측·맥락·가용량을 넣는 규칙 함수가 정하므로, 같은 입력이면 언제나 같은 결과입니다.",
-    tag: "7단계 ladder",
-  },
-  {
-    icon: BellRing,
-    title: "이상 감지와 원인 분석",
-    body: "아올다 관측 스택 위에서 배포한 VM을 지켜보다가, 트래픽 급증으로 인한 다운이나 예측을 벗어난 수요 변화(드리프트)를 감지해 원인과 함께 알립니다.",
-    tag: "이상탐지 · RCA",
-  },
-]
+function BentoCell({
+  icon: Icon,
+  title,
+  body,
+  tag,
+  className = "",
+  children,
+}: {
+  icon: React.ElementType
+  title: string
+  body: string
+  tag: string
+  className?: string
+  children?: React.ReactNode
+}) {
+  return (
+    <div
+      className={`card-lit flex flex-col overflow-hidden rounded-xl border border-border bg-card p-6 transition-smooth hover:border-primary/40 hover:shadow-lift ${className}`}
+    >
+      <div className="flex items-center justify-between">
+        <div className="grid h-10 w-10 place-items-center rounded-lg border border-border bg-elevated text-primary">
+          <Icon className="h-5 w-5" />
+        </div>
+        <span className="rounded-full border border-border px-2.5 py-1 font-mono text-[11px] text-muted-foreground">
+          {tag}
+        </span>
+      </div>
+      <h3 className="mt-6 text-lg font-semibold">{title}</h3>
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{body}</p>
+      {children}
+    </div>
+  )
+}
+
+/* 7단계 사다리 미니 — 등급 결정 셀 하단을 실제 정보로 채운다 */
+function MiniLadder() {
+  return (
+    <div className="mt-auto pt-6">
+      <div className="flex h-12 items-end gap-1.5" aria-hidden="true">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex-1 rounded-sm bg-primary"
+            style={{ height: `${28 + i * 12}%`, opacity: 0.35 + i * 0.09 }}
+          />
+        ))}
+      </div>
+      <div className="mt-2 flex justify-between font-mono text-[10px] text-muted-foreground">
+        <span>tiny</span>
+        <span>max</span>
+      </div>
+    </div>
+  )
+}
+
+/* 이상탐지 → RCA → 알림 미니 흐름 */
+function MiniFlow() {
+  const nodes = ["이상 감지", "RCA", "알림"]
+  return (
+    <div className="mt-auto flex flex-wrap items-center gap-2 pt-6 font-mono text-[11px] text-muted-foreground">
+      {nodes.map((n, i) => (
+        <span key={n} className="flex items-center gap-2">
+          {i > 0 && <span className="text-border">→</span>}
+          <span className="rounded-md border border-border bg-background/50 px-2 py-1">{n}</span>
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/* 결정 파이프라인 — plan_flavor 의 실제 단계를 넓은 셀에 노출(장식 아닌 정보) */
+function DecisionPipeline() {
+  const stages = ["수요 예측", "p90 피크", "헤드룸", "7단계 등급", "배포·관측"]
+  return (
+    <div className="card-lit flex flex-col justify-center overflow-hidden rounded-xl border border-border bg-card p-6 lg:col-span-2">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold">결정 파이프라인</h3>
+        <span className="rounded-full border border-border px-2.5 py-1 font-mono text-[11px] text-muted-foreground">
+          plan_flavor
+        </span>
+      </div>
+      <div className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-3">
+        {stages.map((s, i) => (
+          <span key={s} className="flex items-center gap-2">
+            {i > 0 && <ArrowRight className="h-3.5 w-3.5 text-border" />}
+            <span className="rounded-lg border border-border bg-background/50 px-3 py-1.5 text-sm text-foreground">
+              {s}
+            </span>
+          </span>
+        ))}
+      </div>
+      <p className="mt-4 text-sm text-muted-foreground">
+        같은 입력이면 언제나 같은 결과 — 순수 함수가 등급을 정하고, 서버가 다시 검증합니다.
+      </p>
+    </div>
+  )
+}
 
 function Pillars() {
   return (
@@ -284,24 +353,39 @@ function Pillars() {
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {pillars.map((p) => (
-            <div
-              key={p.title}
-              className="flex flex-col rounded-xl border border-border bg-card p-6 transition-smooth hover:-translate-y-1 hover:shadow-lift"
-            >
-              <div className="flex items-center justify-between">
-                <div className="grid h-10 w-10 place-items-center rounded-lg border border-border bg-elevated text-primary">
-                  <p.icon className="h-5 w-5" />
-                </div>
-                <span className="rounded-full border border-border px-2.5 py-1 font-mono text-[11px] text-muted-foreground">
-                  {p.tag}
-                </span>
-              </div>
-              <h3 className="mt-6 text-lg font-semibold">{p.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{p.body}</p>
+        {/* 벤토: A(넓게)+B, C+D(넓게) — 모든 셀이 실제 정보를 담는다 */}
+        <div className="grid gap-4 lg:grid-cols-3">
+          <BentoCell
+            icon={Activity}
+            title="피크를 놓치지 않는 예측"
+            body="평균 정확도가 아니라 장애를 부르는 피크에 맞춥니다. 24시간 수요를 예측하고 p90 피크를 기준으로 여유를 잡습니다."
+            tag="LSTM · 24h"
+            className="lg:col-span-2"
+          >
+            <div className="mt-6 h-24 rounded-lg border border-border bg-background/50 p-2">
+              <DemandArea />
             </div>
-          ))}
+          </BentoCell>
+
+          <BentoCell
+            icon={Boxes}
+            title="결정론적 등급 결정"
+            body="AI는 요구사항만 해석합니다. VM 등급은 예측·맥락·가용량을 넣는 규칙 함수가 정합니다."
+            tag="7단계 ladder"
+          >
+            <MiniLadder />
+          </BentoCell>
+
+          <BentoCell
+            icon={BellRing}
+            title="이상 감지와 원인 분석"
+            body="배포한 VM을 지켜보다가 트래픽 급증으로 인한 다운이나 예측을 벗어난 수요 변화를 감지해 원인과 함께 알립니다."
+            tag="이상탐지 · RCA"
+          >
+            <MiniFlow />
+          </BentoCell>
+
+          <DecisionPipeline />
         </div>
       </div>
     </section>
@@ -339,7 +423,7 @@ function FlavorLadder() {
           {ladder.map((f, i) => (
             <div
               key={f.name}
-              className="group relative overflow-hidden rounded-lg border border-border bg-card p-4 transition-smooth hover:border-primary/50"
+              className="group relative overflow-hidden rounded-lg border border-border bg-card p-4 transition-smooth hover:-translate-y-1 hover:border-primary/50"
             >
               <div
                 className="absolute inset-x-0 bottom-0 h-1 bg-primary/70"
@@ -364,8 +448,8 @@ function CtaBand() {
   return (
     <section className="py-20 lg:py-28">
       <div className="container mx-auto px-4">
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-card px-6 py-16 text-center">
-          <div className="grid-texture pointer-events-none absolute inset-0 opacity-50" />
+        <div className="card-lit relative isolate overflow-hidden rounded-2xl border border-border bg-card px-6 py-16 text-center">
+          <div className="aurora pointer-events-none absolute inset-0 opacity-70" />
           <div className="relative">
             <h2 className="mx-auto max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl">
               배포 스펙, 이제 고민하지 마세요
@@ -376,7 +460,7 @@ function CtaBand() {
             <div className="mt-8">
               <Button asChild size="lg" variant="hero">
                 <Link to={state.token ? "/predict" : "/login"}>
-                  {state.token ? "대시보드로 이동" : "첫 예측 받아보기"} <ArrowRight className="h-4 w-4" />
+                  {state.token ? "대시보드로 이동" : "GitHub 주소로 시작하기"} <ArrowRight className="h-4 w-4" />
                 </Link>
               </Button>
             </div>

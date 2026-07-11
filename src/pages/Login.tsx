@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, ArrowRight, GraduationCap, TestTube } from "lucide-react"
+import { AlertCircle, ArrowRight, GraduationCap } from "lucide-react"
 import { Logo } from "@/components/logo"
 
 export default function Login() {
@@ -35,19 +35,23 @@ export default function Login() {
     }
   }
 
-  // 아주대학교 SSO — 인증서 연동은 팀원이 붙일 seam. 지금은 안내만 한다.
+  // 아주대학교 SSO — 인증서 연동은 팀원이 붙일 seam.
+  // 그때까지는 랜딩→로그인→대시보드 흐름이 끊기지 않도록 테스트 세션으로 로그인한다.
   const handleSSO = () => {
+    loginWithTestAccount()
     toast({
-      title: "아주대학교 SSO 연동 준비 중",
-      description: "학교 인증서 연동은 곧 제공됩니다. 그동안 이메일 또는 테스트 계정을 이용하세요.",
+      title: "테스트 세션으로 로그인했습니다",
+      description: "아주대학교 SSO 인증서 연동은 곧 제공됩니다 (현재는 데모용 세션).",
     })
+    navigate("/predict")
   }
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* 좌측 브랜드 패널 (데스크톱) */}
-      <div className="relative hidden overflow-hidden border-r border-border bg-card lg:block">
-        <div className="grid-texture pointer-events-none absolute inset-0 opacity-60" />
+      <div className="grain relative hidden overflow-hidden border-r border-border bg-card lg:block">
+        <div className="aurora pointer-events-none absolute inset-0" />
+        <div className="grid-texture pointer-events-none absolute inset-0 opacity-50" />
         <div className="relative flex h-full flex-col justify-between p-12">
           <Link to="/" className="flex items-center gap-2.5">
             <Logo className="h-9 w-9" />
@@ -93,6 +97,9 @@ export default function Login() {
             <GraduationCap className="h-4 w-4" />
             아주대학교 SSO로 로그인
           </Button>
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            현재는 데모 세션으로 로그인됩니다 · SSO 연동 예정
+          </p>
 
           <div className="my-6 flex items-center gap-3">
             <span className="h-px flex-1 bg-border" />
@@ -136,18 +143,6 @@ export default function Login() {
               {!isLoading && <ArrowRight className="h-4 w-4" />}
             </Button>
           </form>
-
-          <button
-            type="button"
-            onClick={() => {
-              loginWithTestAccount()
-              navigate("/predict")
-            }}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-md py-2 text-sm text-muted-foreground transition-smooth hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            <TestTube className="h-4 w-4" />
-            테스트 계정으로 둘러보기
-          </button>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">
             계정이 없으신가요?{" "}

@@ -72,7 +72,11 @@ export function PredictionChart() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[240px]">
+        <div
+          className="h-[240px]"
+          role="img"
+          aria-label={`24시간 리소스 수요 예측, 예측 피크 ${peak.score.toFixed(2)}`}
+        >
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={prediction} margin={{ top: 8, right: 12, bottom: 0, left: -12 }}>
               <defs>
@@ -150,7 +154,7 @@ function ObservedCard({
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[120px]">
+        <div className="h-[120px]" role="img" aria-label={`${title}, 현재 ${current}%`}>
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -20 }}>
               <CartesianGrid vertical={false} stroke="hsl(var(--grid-line))" />

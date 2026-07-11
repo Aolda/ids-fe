@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 테스트 계정으로 로그인 (개발/테스트용)
   const loginWithTestAccount = () => {
     const testToken = "test_token_" + Date.now();
-    const testEmail = "test@mcp-platform.ai";
+    const testEmail = "demo@ajou.ac.kr";
     login(testToken, testEmail);
   };
 

@@ -1,5 +1,12 @@
 import { cn } from "@/lib/utils"
+import { useCountUp } from "@/hooks/use-count-up"
 import { TrendingUp, TrendingDown } from "lucide-react"
+
+function CountUp({ value }: { value: number }) {
+  const n = useCountUp(value)
+  const display = Number.isInteger(value) ? Math.round(n) : Number(n.toFixed(2))
+  return <>{display.toLocaleString()}</>
+}
 
 interface MetricCardProps {
   title: string
@@ -31,7 +38,17 @@ export function MetricCard({ title, value, hint, change, icon, className }: Metr
       </div>
 
       <div className="mt-3 tabular text-2xl font-semibold tracking-tight text-foreground">
-        {typeof value === "number" ? value.toLocaleString() : value}
+        {typeof value === "number" ? (
+          <>
+            {/* 애니메이션 중에도 스크린리더는 항상 최종값을 읽는다 */}
+            <span className="sr-only">{value.toLocaleString()}</span>
+            <span aria-hidden="true">
+              {value >= 10 ? <CountUp value={value} /> : value.toLocaleString()}
+            </span>
+          </>
+        ) : (
+          value
+        )}
       </div>
 
       {change ? (

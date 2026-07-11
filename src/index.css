@@ -210,6 +210,37 @@
   height: 1px;
 }
 
+/* Ambient aurora — soft cyan light sources, not a discrete blob.
+   Two low-opacity radials read as room lighting behind the hero. */
+.aurora {
+  background:
+    radial-gradient(42rem 24rem at 12% -12%, hsl(var(--primary) / 0.16), transparent 60%),
+    radial-gradient(40rem 22rem at 88% -6%, hsl(var(--primary) / 0.10), transparent 55%);
+}
+
+/* Film grain — a hair of texture that makes flat fills feel materially crafted */
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Gradient top-hairline on a card — a 1px lit edge that adds real depth */
+.card-lit {
+  position: relative;
+}
+.card-lit::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.45), transparent);
+}
+
+
 .shadow-card { box-shadow: var(--shadow-card); }
 .shadow-lift { box-shadow: var(--shadow-lift); }
 .transition-smooth { transition: var(--transition-smooth); }

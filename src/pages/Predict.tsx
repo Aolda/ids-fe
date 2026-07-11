@@ -24,13 +24,13 @@ import { useToast } from "@/hooks/use-toast"
 /* 현재 활성 서비스의 등급 결정 요약 (배선 전까지 데모용) */
 function FlavorRecommendation() {
   const reasons = [
-    { k: "예측 피크 (p90)", v: "0.90" },
+    { k: "예측 피크", v: "0.90" },
     { k: "헤드룸 0.90 / 0.70", v: "1.29" },
     { k: "서비스 유형", v: "web" },
     { k: "가용량 검증", v: "통과" },
   ]
   return (
-    <Card className="border-border shadow-card">
+    <Card className="card-lit relative overflow-hidden border-border bg-gradient-to-b from-primary/[0.05] to-transparent shadow-card">
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-semibold">현재 추천 등급</CardTitle>
         <p className="text-xs text-muted-foreground">shop-api · 결정론적 등급 결정</p>
@@ -165,7 +165,12 @@ export default function Predict() {
       {/* 페이지 헤더 */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">대시보드</h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-semibold tracking-tight">대시보드</h1>
+            <span className="rounded-full border border-border bg-muted px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+              데모 데이터
+            </span>
+          </div>
           <p className="mt-1 text-sm text-muted-foreground">
             예측·등급 결정·배포·관측을 한 곳에서 확인하세요.
           </p>
@@ -231,9 +236,7 @@ export default function Predict() {
 
       {/* 관측 지표 */}
       <div className="mt-6">
-        <h2 className="mb-4 text-sm font-semibold text-foreground">
-          관측 지표 <span className="font-normal text-muted-foreground/70">· 데모 데이터</span>
-        </h2>
+        <h2 className="mb-4 text-sm font-semibold text-foreground">관측 지표</h2>
         <ObservedCharts />
       </div>
 
