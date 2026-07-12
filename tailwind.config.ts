@@ -3,9 +3,7 @@ import type { Config } from "tailwindcss";
 export default {
 	darkMode: ["class"],
 	content: [
-		"./pages/**/*.{ts,tsx}",
-		"./components/**/*.{ts,tsx}",
-		"./app/**/*.{ts,tsx}",
+		"./index.html",
 		"./src/**/*.{ts,tsx}",
 	],
 	prefix: "",
@@ -24,11 +22,11 @@ export default {
 				ring: 'hsl(var(--ring))',
 				background: 'hsl(var(--background))',
 				foreground: 'hsl(var(--foreground))',
+				elevated: 'hsl(var(--elevated))',
 				primary: {
 					DEFAULT: 'hsl(var(--primary))',
 					foreground: 'hsl(var(--primary-foreground))',
-					hover: 'hsl(var(--primary-hover))',
-					glow: 'hsl(var(--primary-glow))'
+					hover: 'hsl(var(--primary-hover))'
 				},
 				success: {
 					DEFAULT: 'hsl(var(--success))',
@@ -74,6 +72,8 @@ export default {
 				}
 			},
 			borderRadius: {
+				'2xl': 'calc(var(--radius) + 6px)',
+				xl: 'calc(var(--radius) + 2px)',
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
@@ -95,18 +95,10 @@ export default {
 						height: '0'
 					}
 				},
-				'glow': {
-					'0%': {
-						opacity: '0.7'
-					},
-					'100%': {
-						opacity: '1'
-					}
-				},
-				'fade-in': {
+				'fade-up': {
 					'0%': {
 						opacity: '0',
-						transform: 'translateY(10px)'
+						transform: 'translateY(16px)'
 					},
 					'100%': {
 						opacity: '1',
@@ -117,16 +109,15 @@ export default {
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
-				'glow': 'glow 2s ease-in-out infinite alternate',
-				'fade-in': 'fade-in 0.5s ease-out'
+				'fade-up': 'fade-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both'
 			},
 			fontFamily: {
 				'sans': ['Inter', 'system-ui', 'sans-serif'],
 				'mono': ['JetBrains Mono', 'Monaco', 'monospace']
 			},
 			boxShadow: {
-				'glow': 'var(--shadow-glow)',
-				'card': 'var(--shadow-card)'
+				'card': 'var(--shadow-card)',
+				'lift': 'var(--shadow-lift)'
 			}
 		}
 	},

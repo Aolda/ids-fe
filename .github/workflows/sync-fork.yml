@@ -7,7 +7,8 @@ on:
 
 jobs:
   sync-fork:
-    if: github.repository == 'Aolda/ids-fe'  # 조직 레포인지 확인
+    # 조직 레포(Aolda/ids-fe)에서만 실행 — 포크가 자기 자신을 push 하지 않도록.
+    if: github.repository == 'Aolda/ids-fe'
     runs-on: ubuntu-latest
     permissions:
       contents: read  # 조직 레포 읽을 권한만 사용 (실제 push는 PAT로)
@@ -25,6 +26,11 @@ jobs:
         run: |
           # 포크 레포를 새로운 remote로 추가
           git remote add fork "https://bang0930:${FORK_SYNC_PAT}@github.com/bang0930/ids-fe"
+          # PAT 미설정 시 실패(빨간 X) 대신 경고 후 건너뜀 — 시크릿 추가되면 자동 동작.
+          if [ -z "$FORK_SYNC_PAT" ]; then
+            echo "::warning::FORK_SYNC_PAT 시크릿 미설정 — bang0930 포크 동기화를 건너뜁니다. (Vercel 배포 원천이 포크라면 시크릿을 추가하세요.)"
+            exit 0
+          fi
 
-          # 포크 main을 조직 main으로 강제 맞춤
+          # 포크 main을 조직 main으로 강제 맞춤 → Vercel 재배포 트리거
           git push --force fork HEAD:main

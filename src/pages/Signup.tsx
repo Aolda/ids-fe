@@ -40,8 +40,8 @@ export default function Signup() {
       const res = await authApi.login(formData.email, formData.password)
       login(res.access_token, formData.email)
       navigate("/predict")
-    } catch (err: any) {
-      setError(err.message || "회원가입에 실패했습니다.")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "회원가입에 실패했습니다.")
     } finally {
       setIsLoading(false)
     }
@@ -53,7 +53,7 @@ export default function Signup() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold text-center">회원가입</CardTitle>
           <CardDescription className="text-center">
-            LaunchA에 가입하여 예측 서비스를 시작하세요
+            launcha에 가입하여 예측 서비스를 시작하세요
           </CardDescription>
         </CardHeader>
         <CardContent>
