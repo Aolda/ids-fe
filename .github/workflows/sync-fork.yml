@@ -7,7 +7,7 @@ on:
 
 jobs:
   sync-fork:
-    if: github.repository == 'MCP-AI-Ops/mcp_web'  # 조직 레포인지 확인
+    if: github.repository == 'Aolda/ids-fe'  # 조직 레포인지 확인
     runs-on: ubuntu-latest
     permissions:
       contents: read  # 조직 레포 읽을 권한만 사용 (실제 push는 PAT로)
@@ -24,7 +24,7 @@ jobs:
           FORK_SYNC_PAT: ${{ secrets.FORK_SYNC_PAT }}
         run: |
           # 포크 레포를 새로운 remote로 추가
-          git remote add fork "https://bang0930:${FORK_SYNC_PAT}@github.com/bang0930/mcp_web.git"
+          git remote add fork "https://bang0930:${FORK_SYNC_PAT}@github.com/bang0930/ids-fe"
 
           # 포크 main을 조직 main으로 강제 맞춤
           git push --force fork HEAD:main
