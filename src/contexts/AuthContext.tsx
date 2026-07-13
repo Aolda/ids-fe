@@ -5,6 +5,8 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 interface AuthState {
   token: string | null;
   email: string | null;
+  // localStorage 하이드레이션 완료 여부 — 라우트 가드가 첫 페인트(null)로 잘못 리다이렉트하는 걸 막는다.
+  initialized: boolean;
 }
 
 interface AuthContextType {
@@ -17,26 +19,28 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, setState] = useState<AuthState>({ token: null, email: null });
+  const [state, setState] = useState<AuthState>({
+    token: null,
+    email: null,
+    initialized: false,
+  });
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     const email = localStorage.getItem("email");
-    if (token && email) {
-      setState({ token, email });
-    }
+    setState({ token: token ?? null, email: email ?? null, initialized: true });
   }, []);
 
   const login = (token: string, email: string) => {
     localStorage.setItem("token", token);
     localStorage.setItem("email", email);
-    setState({ token, email });
+    setState({ token, email, initialized: true });
   };
 
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("email");
-    setState({ token: null, email: null });
+    setState({ token: null, email: null, initialized: true });
   };
 
   // 테스트 계정으로 로그인 (개발/테스트용)
