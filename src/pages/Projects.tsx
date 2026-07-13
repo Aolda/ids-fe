@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react"
+import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,43 +24,174 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/AuthContext"
-import { mcpApi } from "@/lib/mcpAPI"
-import { projectsApi, Project } from "@/lib/mcpAPI"
+import { mcpApi, projectsApi, Project } from "@/lib/mcpAPI"
 import { useToast } from "@/hooks/use-toast"
-import { 
-  Search, 
-  Github, 
-  Eye, 
-  ExternalLink,
-  Calendar,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  Trash2,
-  RefreshCw,
-  Globe
-} from "lucide-react"
+import { cn } from "@/lib/utils"
+import { Search, Github, ExternalLink, Trash2, RefreshCw, Boxes } from "lucide-react"
+
+const statusMeta: Record<Project["status"], { label: string; cls: string }> = {
+  deployed: { label: "배포됨", cls: "bg-success/10 text-success border-success/20" },
+  building: { label: "빌드 중", cls: "bg-warning/10 text-warning border-warning/20" },
+  error: { label: "오류", cls: "bg-destructive/10 text-destructive border-destructive/20" },
+  stopped: { label: "중지됨", cls: "bg-muted text-muted-foreground border-border" },
+}
+
+function formatWhen(iso: string | null): string {
+  if (!iso) return "—"
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return "—"
+  const p = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`
+}
+
+const repoPath = (repo: string) => repo.replace(/^https?:\/\/github\.com\//, "").replace(/\/$/, "")
+
+function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="text-sm text-foreground">{children}</div>
+    </div>
+  )
+}
+
+function ProjectCard({
+  p,
+  isDeleting,
+  onDelete,
+}: {
+  p: Project
+  isDeleting: boolean
+  onDelete: (p: Project) => void
+}) {
+  const meta = statusMeta[p.status] ?? statusMeta.stopped
+  return (
+    <div className="flex flex-col rounded-xl border border-border bg-card p-5 transition-smooth hover:border-primary/40 hover:shadow-card">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="truncate font-medium">{p.name}</div>
+          <div className="mt-0.5 flex items-center gap-1.5 truncate font-mono text-xs text-muted-foreground">
+            <Github className="h-3 w-3 shrink-0" />
+            {repoPath(p.repository)}
+          </div>
+        </div>
+        <Badge variant="outline" className={cn("shrink-0 font-medium", meta.cls)}>
+          {meta.label}
+        </Badge>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
+        <span className="font-mono">{formatWhen(p.lastDeployment)}</span>
+        {p.url && (
+          <a
+            href={p.url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-primary hover:underline"
+          >
+            열기 <ExternalLink className="h-3 w-3" />
+          </a>
+        )}
+      </div>
+
+      <div className="mt-4 flex gap-2 border-t border-border pt-4">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" className="flex-1">
+              상세
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[560px]">
+            <DialogHeader>
+              <DialogTitle>{p.name}</DialogTitle>
+              <DialogDescription>프로젝트 배포 상세 정보</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-5 py-2">
+              <DetailRow label="GitHub">
+                <a
+                  href={p.repository}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 font-mono text-primary hover:underline"
+                >
+                  {repoPath(p.repository)} <ExternalLink className="h-3 w-3" />
+                </a>
+              </DetailRow>
+              <DetailRow label="상태">
+                <Badge variant="outline" className={cn("font-medium", meta.cls)}>
+                  {meta.label}
+                </Badge>
+              </DetailRow>
+              {p.url && (
+                <DetailRow label="배포 URL">
+                  <a
+                    href={p.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 font-mono text-primary hover:underline"
+                  >
+                    {p.url} <ExternalLink className="h-3 w-3" />
+                  </a>
+                </DetailRow>
+              )}
+              {p.instance_id && (
+                <DetailRow label="Instance ID">
+                  <span className="font-mono text-muted-foreground">{p.instance_id}</span>
+                </DetailRow>
+              )}
+              {p.service_id && (
+                <DetailRow label="Service ID">
+                  <span className="font-mono text-muted-foreground">{p.service_id}</span>
+                </DetailRow>
+              )}
+              <DetailRow label="마지막 배포">
+                <span className="font-mono text-muted-foreground">{formatWhen(p.lastDeployment)}</span>
+              </DetailRow>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="ghost" size="sm" disabled={isDeleting} className="text-muted-foreground hover:text-destructive">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>프로젝트를 삭제할까요?</AlertDialogTitle>
+              <AlertDialogDescription>
+                되돌릴 수 없습니다. <strong className="text-foreground">{p.name}</strong>와 관련 리소스가 영구 삭제됩니다.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>취소</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => onDelete(p)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                삭제
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
+  )
+}
 
 export default function Projects() {
   const { state } = useAuth()
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState("")
-  const [projects, setProjects] = useState<Project[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+  const [projects, setProjects] = useState<Project[] | null>(null)
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
-  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
 
-  // 프로젝트 목록 로드
   const loadProjects = useCallback(async () => {
     if (!state.token) {
       setProjects([])
-      setIsLoading(false)
       return
     }
-
-    setIsLoading(true)
     try {
       const response = await projectsApi.getProjects(state.token)
       setProjects(response.projects ?? [])
@@ -67,8 +199,6 @@ export default function Projects() {
       // 백엔드 미가동/조회 실패 → 빈 목록(정직). 가짜 데이터로 대체하지 않는다.
       console.warn("프로젝트 로드 실패", err)
       setProjects([])
-    } finally {
-      setIsLoading(false)
     }
   }, [state.token])
 
@@ -76,355 +206,103 @@ export default function Projects() {
     loadProjects()
   }, [loadProjects])
 
-  const filteredProjects = projects.filter(project => {
-    const query = searchQuery.toLowerCase()
-    return (
-      project.name.toLowerCase().includes(query) ||
-      project.repository.toLowerCase().includes(query)
-    )
-  })
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "deployed":
-        return <CheckCircle className="h-4 w-4 text-success" />
-      case "building":
-        return <Clock className="h-4 w-4 text-warning animate-spin" />
-      case "error":
-        return <XCircle className="h-4 w-4 text-destructive" />
-      case "stopped":
-        return <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-      default:
-        return <Clock className="h-4 w-4 text-muted-foreground" />
-    }
-  }
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "deployed":
-        return <Badge className="bg-success/10 text-success border-success/20">Deployed</Badge>
-      case "building":
-        return <Badge className="bg-warning/10 text-warning border-warning/20">Building</Badge>
-      case "error":
-        return <Badge className="bg-destructive/10 text-destructive border-destructive/20">Error</Badge>
-      case "stopped":
-        return <Badge variant="secondary">Stopped</Badge>
-      default:
-        return <Badge variant="outline">Unknown</Badge>
-    }
-  }
-
-  const handleDestroyProject = async (project: Project) => {
-    if (!state.token) {
-      toast({
-        title: "오류",
-        description: "인증 토큰이 없습니다. 다시 로그인해주세요.",
-        variant: "destructive"
-      })
-      return
-    }
-
+  const handleDelete = async (project: Project) => {
+    if (!state.token) return
     setIsDeleting(project.id)
     try {
-      // 프로젝트 삭제
       await projectsApi.deleteProject(project.id, state.token)
-      
-      // 인스턴스가 있으면 리소스도 삭제
       if (project.service_id && project.instance_id) {
         try {
           await mcpApi.destroy(
-            {
-              service_id: project.service_id,
-              instance_id: project.instance_id,
-            },
+            { service_id: project.service_id, instance_id: project.instance_id },
             state.token
           )
         } catch (destroyErr) {
-          // 리소스 삭제 실패는 경고만 표시 (프로젝트는 이미 삭제됨)
           console.warn("리소스 삭제 실패:", destroyErr)
         }
       }
-      
-      toast({
-        title: "프로젝트 삭제 완료",
-        description: `${project.name} 프로젝트가 성공적으로 삭제되었습니다.`,
-      })
-      
-      // 프로젝트 목록 새로고침
-      await loadProjects()
+      toast({ title: "프로젝트 삭제 완료", description: `${project.name}를 삭제했습니다.` })
+      setProjects((prev) => (prev ? prev.filter((p) => p.id !== project.id) : prev))
     } catch (err) {
       toast({
         title: "프로젝트 삭제 실패",
         description: err instanceof Error ? err.message : "프로젝트 삭제에 실패했습니다.",
-        variant: "destructive"
+        variant: "destructive",
       })
     } finally {
       setIsDeleting(null)
     }
   }
 
-  const showLoadingState = isLoading && projects.length === 0
+  const filtered = (projects ?? []).filter((p) => {
+    const q = searchQuery.toLowerCase()
+    return p.name.toLowerCase().includes(q) || p.repository.toLowerCase().includes(q)
+  })
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Projects</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage your deployment projects and monitor their status
-          </p>
+          <h1 className="text-2xl font-semibold tracking-tight">프로젝트</h1>
+          <p className="mt-1 text-sm text-muted-foreground">배포한 서비스를 관리하고 상태를 확인하세요.</p>
         </div>
-        
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={loadProjects}
-            disabled={isLoading}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setProjects(null)
+            loadProjects()
+          }}
+        >
+          <RefreshCw className="h-4 w-4" />
+          새로고침
+        </Button>
       </div>
 
-      {/* Search */}
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="relative mt-6">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          placeholder="Search projects..."
+          placeholder="이름 또는 저장소로 검색"
           className="pl-10"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
 
-      {/* Projects Grid */}
-      {showLoadingState ? (
-        <div className="text-center py-12">
-          <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
-            <RefreshCw className="h-12 w-12 text-muted-foreground animate-spin" />
-          </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">
-            프로젝트를 불러오는 중...
-          </h3>
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {filteredProjects.map((project) => (
-            <Card key={project.id} className="shadow-card transition-smooth hover:shadow-lg">
-            <CardHeader className="space-y-3">
-              <div className="flex items-start justify-between">
-                <CardTitle className="text-lg font-semibold">
-                  {project.name}
-                </CardTitle>
-                <div className="flex items-center gap-1">
-                  {getStatusIcon(project.status)}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Github className="h-4 w-4" />
-                <span className="truncate" title={project.repository}>
-                  {project.repository.replace('https://github.com/', '')}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                {getStatusBadge(project.status)}
-                {project.url && (
-                  <Button variant="ghost" size="sm" asChild>
-                    <a href={project.url} target="_blank" rel="noopener noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                <span>
-                  {project.lastDeployment 
-                    ? `Last deployed ${new Date(project.lastDeployment).toLocaleDateString('ko-KR', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      })}`
-                    : "Not deployed yet"}
-                </span>
-              </div>
-
-              <div className="flex gap-2">
-                <Dialog 
-                  open={isDetailDialogOpen && selectedProject?.id === project.id} 
-                  onOpenChange={(open) => {
-                    setIsDetailDialogOpen(open)
-                    if (!open) setSelectedProject(null)
-                  }}
-                >
-                  <DialogTrigger asChild>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1"
-                      onClick={() => {
-                        setSelectedProject(project)
-                        setIsDetailDialogOpen(true)
-                      }}
-                    >
-                      <Eye className="mr-2 h-4 w-4" />
-                      Details
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[600px]">
-                    <DialogHeader>
-                      <DialogTitle>프로젝트 상세 정보</DialogTitle>
-                      <DialogDescription>
-                        {project.name} 프로젝트의 상세 정보를 확인합니다.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-6 py-4">
-                      {/* 프로젝트 기본 정보 */}
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">프로젝트 이름</p>
-                          <p className="text-foreground">{project.name}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-2">
-                            <Github className="h-4 w-4" />
-                            GitHub Repository
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <a
-                              href={project.repository}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary hover:underline truncate"
-                            >
-                              {project.repository}
-                            </a>
-                            <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground mb-1">배포 상태</p>
-                          <div className="flex items-center gap-2">
-                            {getStatusIcon(project.status)}
-                            {getStatusBadge(project.status)}
-                          </div>
-                        </div>
-                        {project.url && (
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-2">
-                              <Globe className="h-4 w-4" />
-                              배포 URL
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <a
-                                href={project.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary hover:underline truncate"
-                              >
-                                {project.url}
-                              </a>
-                              <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                            </div>
-                          </div>
-                        )}
-                        {project.service_id && (
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Service ID</p>
-                            <p className="text-foreground font-mono text-sm">{project.service_id}</p>
-                          </div>
-                        )}
-                        {project.instance_id && (
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">Instance ID</p>
-                            <p className="text-foreground font-mono text-sm">{project.instance_id}</p>
-                          </div>
-                        )}
-                        {project.lastDeployment && (
-                          <div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1 flex items-center gap-2">
-                              <Calendar className="h-4 w-4" />
-                              마지막 배포일
-                            </p>
-                            <p className="text-foreground">
-                              {new Date(project.lastDeployment).toLocaleString('ko-KR', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              <div className="pt-2 border-t border-border">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button 
-                      variant="destructive" 
-                      size="sm" 
-                      className="w-full"
-                      disabled={isDeleting === project.id}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      {isDeleting === project.id ? "삭제 중..." : "프로젝트 삭제"}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>프로젝트를 삭제하시겠습니까?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        이 작업은 되돌릴 수 없습니다. 프로젝트와 모든 관련 리소스가 영구적으로 삭제됩니다.
-                        <br />
-                        <strong>{project.name}</strong> 프로젝트를 삭제하시겠습니까?
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>취소</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleDestroyProject(project)}
-                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                      >
-                        삭제
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </CardContent>
-          </Card>
+      {projects === null ? (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-40 rounded-xl" />
           ))}
         </div>
-      )}
-
-      {!isLoading && filteredProjects.length === 0 && (
-        <div className="text-center py-12">
-          <div className="mx-auto w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
-            <Search className="h-12 w-12 text-muted-foreground" />
+      ) : filtered.length === 0 ? (
+        <div className="mt-6 rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
+          <div className="mx-auto mb-4 grid h-11 w-11 place-items-center rounded-xl bg-muted text-muted-foreground">
+            <Boxes className="h-5 w-5" />
           </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">
-            No projects found
+          <h3 className="font-semibold">
+            {searchQuery ? "검색 결과가 없어요" : "아직 배포한 서비스가 없어요"}
           </h3>
-          <p className="text-muted-foreground mb-4">
-            {searchQuery ? "Try adjusting your search terms" : "프로젝트가 없습니다. 대시보드에서 프로젝트를 생성해주세요."}
+          <p className="mt-2 text-sm text-muted-foreground">
+            {searchQuery ? (
+              "다른 검색어를 시도해보세요."
+            ) : (
+              <>
+                대시보드에서 첫 예측을 시작하면 여기에 쌓입니다.{" "}
+                <Link to="/predict" className="font-medium text-primary hover:underline">
+                  대시보드로 이동
+                </Link>
+              </>
+            )}
           </p>
+        </div>
+      ) : (
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((p) => (
+            <ProjectCard key={p.id} p={p} isDeleting={isDeleting === p.id} onDelete={handleDelete} />
+          ))}
         </div>
       )}
     </div>
   )
 }
-
