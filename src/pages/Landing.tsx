@@ -33,22 +33,11 @@ function LandingHeader() {
 
         <div className="flex items-center gap-1.5">
           <ThemeToggle />
-          {state.token ? (
-            <Button asChild size="sm">
-              <Link to="/predict">
-                대시보드 <ArrowRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          ) : (
-            <>
-              <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-                <Link to="/login">로그인</Link>
-              </Button>
-              <Button asChild size="sm">
-                <Link to="/login">시작하기</Link>
-              </Button>
-            </>
-          )}
+          <Button asChild size="sm">
+            <Link to={state.token ? "/predict" : "/login"}>
+              {state.token ? "대시보드" : "시작하기"} <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </div>
       </div>
     </header>
@@ -157,6 +146,7 @@ function HeroPreview() {
 }
 
 function Hero() {
+  const { state } = useAuth()
   return (
     <section className="grain relative isolate overflow-hidden border-b border-border">
       <div className="aurora pointer-events-none absolute inset-0 -z-10" />
@@ -182,8 +172,9 @@ function Hero() {
 
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Button asChild size="lg" variant="hero">
-              <Link to="/login">
-                첫 예측 받아보기 <ArrowRight className="h-4 w-4" />
+              <Link to={state.token ? "/predict" : "/login"}>
+                {state.token ? "대시보드로 이동" : "첫 예측 받아보기"}{" "}
+                <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">

@@ -41,26 +41,11 @@ import {
   Globe
 } from "lucide-react"
 
-const MOCK_PROJECTS: Project[] = [
-  {
-    id: 101,
-    name: "fastapi",
-    repository: "https://github.com/fastapi/fastapi",
-    status: "deployed",
-    lastDeployment: "2025-11-28T09:52:00+09:00",
-    url: "https://retail.launcha.cloud",
-    service_id: "test-service-id",
-    instance_id: "m1.medium",
-    created_at: "2025-10-05T14:12:00Z",
-    updated_at: "2025-11-24T08:45:00Z"
-  }
-]
-
 export default function Projects() {
   const { state } = useAuth()
   const { toast } = useToast()
   const [searchQuery, setSearchQuery] = useState("")
-  const [projects, setProjects] = useState<Project[]>(MOCK_PROJECTS)
+  const [projects, setProjects] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
@@ -69,7 +54,7 @@ export default function Projects() {
   // 프로젝트 목록 로드
   const loadProjects = useCallback(async () => {
     if (!state.token) {
-      setProjects(MOCK_PROJECTS)
+      setProjects([])
       setIsLoading(false)
       return
     }
@@ -77,19 +62,15 @@ export default function Projects() {
     setIsLoading(true)
     try {
       const response = await projectsApi.getProjects(state.token)
-      const fetchedProjects = response.projects ?? []
-      if (fetchedProjects.length > 0) {
-        setProjects(fetchedProjects)
-      } else {
-        setProjects(MOCK_PROJECTS)
-      }
-    } catch (err: any) {
-      console.warn("프로젝트 로드 실패, mock 데이터 표시 (토스트 숨김)", err)
-      setProjects(MOCK_PROJECTS)
+      setProjects(response.projects ?? [])
+    } catch (err) {
+      // 백엔드 미가동/조회 실패 → 빈 목록(정직). 가짜 데이터로 대체하지 않는다.
+      console.warn("프로젝트 로드 실패", err)
+      setProjects([])
     } finally {
       setIsLoading(false)
     }
-  }, [state.token, toast])
+  }, [state.token])
 
   useEffect(() => {
     loadProjects()
@@ -158,7 +139,7 @@ export default function Projects() {
             },
             state.token
           )
-        } catch (destroyErr: any) {
+        } catch (destroyErr) {
           // 리소스 삭제 실패는 경고만 표시 (프로젝트는 이미 삭제됨)
           console.warn("리소스 삭제 실패:", destroyErr)
         }
@@ -171,10 +152,10 @@ export default function Projects() {
       
       // 프로젝트 목록 새로고침
       await loadProjects()
-    } catch (err: any) {
+    } catch (err) {
       toast({
         title: "프로젝트 삭제 실패",
-        description: err.message || "프로젝트 삭제에 실패했습니다.",
+        description: err instanceof Error ? err.message : "프로젝트 삭제에 실패했습니다.",
         variant: "destructive"
       })
     } finally {

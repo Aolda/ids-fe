@@ -22,25 +22,8 @@ export interface UserProfile {
   created_at: string;
 }
 
+// 인증은 아주대 SSO(Keycloak) 단일 — 이메일 login/self-signup 은 제거됨.
 export const authApi = {
-  login: async (email: string, password: string) => {
-    const res = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-    return handleResponse(res);  // { access_token, token_type }
-  },
-
-  signup: async (formData: any) => {
-    const res = await fetch(`${API_BASE_URL}/auth/signup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData)
-    });
-    return handleResponse(res);
-  },
-
   // 유저 프로필 조회
   getProfile: async (token: string): Promise<UserProfile> => {
     const res = await fetch(`${API_BASE_URL}/auth/profile`, {
