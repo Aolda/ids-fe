@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { mcpApi, projectsApi, DeployResponse, Project } from "@/lib/mcpAPI"
-import { backendApi } from "@/lib/backendAPI"
+import { backendApi, PredictResponse } from "@/lib/backendAPI"
 import { CreateProjectDialog, ProjectData } from "@/components/CreateProjectDialog"
 import { DeploymentSummaryDialog, DeploymentSummaryData } from "@/components/DeploymentSummaryDialog"
 import { Button } from "@/components/ui/button"
@@ -139,20 +139,23 @@ export default function Predict() {
     loadProjects()
   }, [loadProjects])
 
-  const handleCreateProject = async (projectData: ProjectData) => {
+  // 1단계: 예측만(읽기 전용). 게이트(auto/manual/block)·되묻기 판단은 다이얼로그가 결과로 처리한다.
+  const runPredict = async (projectData: ProjectData): Promise<PredictResponse> => {
+    localStorage.setItem("project_data", JSON.stringify(projectData))
+    // 자연어 + GitHub URL → IDS 예측 (POST /api/v1/plans)
+    return backendApi.predictWithNaturalLanguage({
+      github_url: projectData.github_repo_url,
+      user_input: projectData.requirements,
+    })
+  }
+
+  // 2단계: 사용자가 검토 후 배포를 승인했을 때만 호출(block 은 다이얼로그에서 버튼이 없어 도달 불가).
+  const runDeploy = async (projectData: ProjectData, predictResponse: PredictResponse) => {
     if (!state.token) {
       throw new Error("인증 토큰이 없습니다. 다시 로그인해주세요.")
     }
 
     try {
-      localStorage.setItem("project_data", JSON.stringify(projectData))
-
-      // 자연어 + GitHub URL → IDS 예측 (POST /api/v1/plans)
-      const predictResponse = await backendApi.predictWithNaturalLanguage({
-        github_url: projectData.github_repo_url,
-        user_input: projectData.requirements,
-      })
-
       const deployData = {
         github_url: projectData.github_repo_url,
         // 서버가 배포 시 generate_plan 을 재실행하므로, 자연어를 넘겨야 미리보기 flavor=실제 배포 flavor.
@@ -257,7 +260,7 @@ export default function Predict() {
         })
       }
     } catch (err) {
-      throw new Error(err instanceof Error ? err.message : "프로젝트 생성에 실패했습니다.")
+      throw new Error(err instanceof Error ? err.message : "배포에 실패했습니다.")
     }
   }
 
@@ -294,7 +297,8 @@ export default function Predict() {
       <CreateProjectDialog
         open={isProjectDialogOpen}
         onOpenChange={setIsProjectDialogOpen}
-        onSubmit={handleCreateProject}
+        onPredict={runPredict}
+        onDeploy={runDeploy}
       />
 
       {deploymentSummary && (
