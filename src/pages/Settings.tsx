@@ -1,24 +1,7 @@
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Skeleton } from "@/components/ui/skeleton"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import { useTheme } from "@/components/theme-provider"
 import { useAuth } from "@/contexts/AuthContext"
-import { authApi, UserProfile } from "@/lib/authAPI"
-import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
-import { Mail, Calendar, ShieldCheck, Sun, Moon, Monitor, Trash2, Check } from "lucide-react"
+import { Mail, ShieldCheck, Sun, Moon, Monitor, Check } from "lucide-react"
 
 function Section({
   title,
@@ -68,60 +51,11 @@ const themes: { key: "light" | "dark" | "system"; label: string; icon: React.Ele
   { key: "system", label: "시스템", icon: Monitor, desc: "OS 설정을 따름" },
 ]
 
-function formatDate(iso: string): string {
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return "—"
-  const p = (n: number) => String(n).padStart(2, "0")
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
-}
-
 export default function Settings() {
   const { theme, setTheme } = useTheme()
-  const { state, logout } = useAuth()
-  const navigate = useNavigate()
-  const { toast } = useToast()
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { state } = useAuth()
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      if (!state.token) {
-        setIsLoading(false)
-        return
-      }
-      try {
-        setProfile(await authApi.getProfile(state.token))
-      } catch (err) {
-        // 백엔드 미가동 등 — 세션 email 로 폴백 표시(토스트 억제).
-        console.warn("프로필 로드 실패", err)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    loadProfile()
-  }, [state.token])
-
-  const handleDeleteAccount = async () => {
-    if (!state.token) return
-    setIsDeleting(true)
-    try {
-      await authApi.deleteAccount(state.token)
-      toast({ title: "계정 삭제 완료", description: "계정 데이터가 삭제되었습니다." })
-      logout()
-      navigate("/login")
-    } catch (err) {
-      toast({
-        title: "계정 삭제 실패",
-        description: err instanceof Error ? err.message : "계정 삭제에 실패했습니다.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsDeleting(false)
-    }
-  }
-
-  const email = profile?.email ?? state.email ?? "—"
+  const email = state.email ?? "—"
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -135,15 +69,7 @@ export default function Settings() {
           {/* 계정 */}
           <Section title="계정" desc="아주대학교 SSO로 인증된 계정입니다.">
             <div>
-              <Row
-                icon={Mail}
-                label="이메일"
-                mono
-                value={isLoading ? <Skeleton className="h-4 w-40" /> : email}
-              />
-              {profile?.created_at && (
-                <Row icon={Calendar} label="가입일" value={formatDate(profile.created_at)} />
-              )}
+              <Row icon={Mail} label="이메일" mono value={email} />
             </div>
             <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm text-muted-foreground">
               <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
@@ -174,43 +100,6 @@ export default function Settings() {
                   </button>
                 )
               })}
-            </div>
-          </Section>
-
-          {/* 위험 구역 */}
-          <Section title="위험 구역" desc="되돌릴 수 없는 작업입니다.">
-            <div className="flex flex-col gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="font-medium">계정 데이터 삭제</div>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  계정과 관련된 모든 데이터가 영구적으로 삭제됩니다.
-                </p>
-              </div>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" disabled={isDeleting} className="shrink-0">
-                    <Trash2 className="h-4 w-4" />
-                    {isDeleting ? "삭제 중…" : "삭제"}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>정말 삭제할까요?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      되돌릴 수 없습니다. 계정과 모든 관련 데이터가 영구적으로 삭제됩니다.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>취소</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleDeleteAccount}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      삭제
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
             </div>
           </Section>
         </div>

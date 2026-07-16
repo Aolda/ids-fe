@@ -55,41 +55,6 @@ const handleResponse = async (res: Response) => {
 };
 
 export const mcpApi = {
-  // Context JSON을 예쁘게 포장해서 MCP로 전송
-  // 배포는 MCP -> mcp_core -> CI/CD로 자동 처리됨
-  sendContextToMCP: async (
-    payload: {
-      service_id: string
-      metric_name: string
-      context: { github_url: string }
-      requirements: string
-    },
-    token: string
-  ) => {
-    // Context JSON을 예쁘게 포장해서 MCP로 전송
-    // 프론트엔드에서는 GitHub URL만 전달하고, 나머지 필드들은 MCP가 자동으로 채움
-    // 자연어 요청사항은 별도 필드로 전송
-    const formattedPayload = {
-      service_id: payload.service_id,
-      metric_name: payload.metric_name,
-      context: {
-        github_url: payload.context.github_url,
-        // 나머지 필드들(timestamp, service_type, runtime_env, time_slot, weight, region, curr_cpu, curr_mem, expected_users)은 MCP가 채움
-      },
-      requirements: payload.requirements, // 자연어 요청사항 (string으로 래핑)
-    }
-
-    const res = await fetch(`${API_BASE_URL}/api/v1/plans`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(formattedPayload, null, 2) // 예쁘게 포장된 JSON
-    });
-    return handleResponse(res);
-  },
-
   // 배포 요청 (MCP Core DeployRequest 스키마에 맞춤)
   // DeployRequest (백엔드): github_url, repo_id?, image_tag?, plan_id?, env_config
   deploy: async (deployData: {
@@ -171,41 +136,6 @@ export const projectsApi = {
   }, token: string): Promise<Project> => {
     const res = await fetch(`${API_BASE_URL}/api/v1/projects`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(projectData)
-    });
-    return handleResponse(res);
-  },
-
-  // 프로젝트 상세 조회
-  getProject: async (projectId: number, token: string): Promise<Project> => {
-    const res = await fetch(`${API_BASE_URL}/api/v1/projects/${projectId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    return handleResponse(res);
-  },
-
-  // 프로젝트 업데이트
-  updateProject: async (
-    projectId: number,
-    projectData: {
-      name?: string;
-      repository?: string;
-      status?: "deployed" | "building" | "error" | "stopped";
-      url?: string;
-      service_id?: string;
-      instance_id?: string;
-    },
-    token: string
-  ): Promise<Project> => {
-    const res = await fetch(`${API_BASE_URL}/api/v1/projects/${projectId}`, {
-      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`

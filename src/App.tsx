@@ -10,7 +10,6 @@ import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Predict from "./pages/Predict";
 import Projects from "./pages/Projects";
-import ProjectDetail from "./pages/ProjectDetail";
 import Settings from "./pages/Settings";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
@@ -76,14 +75,6 @@ const App = () => (
                   element={
                     <PrivateRoute>
                       <Projects />
-                    </PrivateRoute>
-                  }
-                />
-                <Route
-                  path="/projects/:projectId"
-                  element={
-                    <PrivateRoute>
-                      <ProjectDetail />
                     </PrivateRoute>
                   }
                 />
