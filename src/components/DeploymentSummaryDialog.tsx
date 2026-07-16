@@ -7,7 +7,6 @@ import { PredictResponse } from "@/lib/backendAPI"
 
 export interface DeploymentSummaryData {
   githubUrl: string
-  serviceId: string
   predictResult?: PredictResponse | null
   deployResult: DeployResponse
 }
@@ -35,7 +34,7 @@ const formatDateTime = (value?: string | null) => {
 export function DeploymentSummaryDialog({ open, onOpenChange, data }: DeploymentSummaryDialogProps) {
   if (!data) return null
 
-  const { deployResult, predictResult, githubUrl, serviceId } = data
+  const { deployResult, predictResult, githubUrl } = data
   const instance = deployResult.instance
   const hasMetadata = instance && instance.metadata && Object.keys(instance.metadata).length > 0
   const addressesEntries = instance ? Object.entries(instance.addresses || {}) : []
@@ -55,10 +54,7 @@ export function DeploymentSummaryDialog({ open, onOpenChange, data }: Deployment
         <div className="space-y-6 py-2 max-h-[70vh] overflow-y-auto pr-1">
           <section className="space-y-3">
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Service ID</p>
-                <p className="font-medium">{serviceId}</p>
-              </div>
+              <p className="text-sm font-medium text-foreground">배포 결과</p>
               <Badge variant={deployResult.accepted ? "default" : "destructive"}>
                 {deployResult.accepted ? "배포 완료" : "요청 거절"}
               </Badge>

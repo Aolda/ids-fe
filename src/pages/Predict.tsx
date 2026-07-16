@@ -146,7 +146,6 @@ export default function Predict() {
 
     try {
       localStorage.setItem("project_data", JSON.stringify(projectData))
-      const serviceId = `svc-${Date.now()}`
 
       // 자연어 + GitHub URL → IDS 예측 (POST /api/v1/plans)
       const predictResponse = await backendApi.predictWithNaturalLanguage({
@@ -161,7 +160,6 @@ export default function Predict() {
         repo_id: projectData.github_repo_url.split("/").pop() || projectData.github_repo_url,
         image_tag: "latest",
         env_config: {
-          service_id: serviceId,
           recommended_flavor: predictResponse?.recommendations?.flavor ?? null,
           recommendations: predictResponse?.recommendations ?? null,
           extracted_context: predictResponse?.extracted_context ?? null,
@@ -228,7 +226,6 @@ export default function Predict() {
 
       setDeploymentSummary({
         githubUrl: projectData.github_repo_url,
-        serviceId,
         predictResult: predictResponse,
         deployResult: deployResponse,
       })
