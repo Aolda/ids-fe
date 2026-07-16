@@ -81,7 +81,7 @@ function ProjectCard({
       </div>
 
       <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-        <span className="font-mono">{formatWhen(p.lastDeployment)}</span>
+        <span className="font-mono">{formatWhen(p.last_deployment)}</span>
         {p.url && (
           <a
             href={p.url}
@@ -139,13 +139,8 @@ function ProjectCard({
                   <span className="font-mono text-muted-foreground">{p.instance_id}</span>
                 </DetailRow>
               )}
-              {p.service_id && (
-                <DetailRow label="Service ID">
-                  <span className="font-mono text-muted-foreground">{p.service_id}</span>
-                </DetailRow>
-              )}
               <DetailRow label="마지막 배포">
-                <span className="font-mono text-muted-foreground">{formatWhen(p.lastDeployment)}</span>
+                <span className="font-mono text-muted-foreground">{formatWhen(p.last_deployment)}</span>
               </DetailRow>
             </div>
           </DialogContent>
@@ -211,12 +206,10 @@ export default function Projects() {
     setIsDeleting(project.id)
     try {
       await projectsApi.deleteProject(project.id, state.token)
-      if (project.service_id && project.instance_id) {
+      // 인스턴스가 있으면 OpenStack 리소스도 정리 (service_id 는 백엔드가 안 씀 → instance_id 기준).
+      if (project.instance_id) {
         try {
-          await mcpApi.destroy(
-            { service_id: project.service_id, instance_id: project.instance_id },
-            state.token
-          )
+          await mcpApi.destroy(project.instance_id, state.token)
         } catch (destroyErr) {
           console.warn("리소스 삭제 실패:", destroyErr)
         }

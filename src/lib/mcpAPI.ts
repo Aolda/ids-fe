@@ -94,6 +94,9 @@ export const mcpApi = {
   // DeployRequest (백엔드): github_url, repo_id?, image_tag?, plan_id?, env_config
   deploy: async (deployData: {
     github_url: string;
+    // 자연어 요구사항 — 서버가 배포 시 generate_plan 을 재실행하므로, 이걸 넘겨야 예측 단계에서
+    // 보여준 flavor/컨텍스트가 실제 배포에서 그대로 재현된다(안 넘기면 빈 컨텍스트로 재산출).
+    natural_language?: string;
     repo_id?: string;
     image_tag?: string;
     plan_id?: string;
@@ -112,12 +115,8 @@ export const mcpApi = {
   },
 
   // 리소스 삭제 — 백엔드: DELETE /api/v1/deploy/{instance_id} (Bearer 필요).
-  // service_id는 백엔드가 사용하지 않지만 호출부 호환을 위해 시그니처는 유지한다.
-  destroy: async (destroyData: {
-    service_id: string;
-    instance_id: string;
-  }, token: string) => {
-    const res = await fetch(`${API_BASE_URL}/api/v1/deploy/${destroyData.instance_id}`, {
+  destroy: async (instance_id: string, token: string) => {
+    const res = await fetch(`${API_BASE_URL}/api/v1/deploy/${instance_id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -132,9 +131,9 @@ export interface Project {
   name: string;
   repository: string;
   status: "deployed" | "building" | "error" | "stopped";
-  lastDeployment: string | null;
+  // 백엔드 ProjectResponse 와 동일한 snake_case (예전엔 lastDeployment 로 어긋나 항상 undefined).
+  last_deployment: string | null;
   url: string | null;
-  service_id: string | null;
   instance_id: string | null;
   created_at?: string;
   updated_at?: string;
@@ -161,10 +160,14 @@ export const projectsApi = {
     name: string;
     repository: string;
     status?: "deployed" | "building" | "error" | "stopped";
-    lastDeployment?: string | null;
     url?: string | null;
-    service_id?: string | null;
     instance_id?: string | null;
+    last_deployment?: string | null;
+    // 예측이 뽑은 컨텍스트를 함께 실어야 upsert 가 기본값(web/prod/normal)으로 덮지 않는다.
+    service_type?: string;
+    runtime_env?: string;
+    time_slot?: string;
+    expected_users?: number | null;
   }, token: string): Promise<Project> => {
     const res = await fetch(`${API_BASE_URL}/api/v1/projects`, {
       method: 'POST',

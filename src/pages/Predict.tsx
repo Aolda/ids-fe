@@ -69,7 +69,7 @@ function ProjectCard({ p }: { p: Project }) {
         </Badge>
       </div>
       <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-        <span className="font-mono">{formatWhen(p.lastDeployment)}</span>
+        <span className="font-mono">{formatWhen(p.last_deployment)}</span>
         {p.url && (
           <a
             href={p.url}
@@ -156,6 +156,8 @@ export default function Predict() {
 
       const deployData = {
         github_url: projectData.github_repo_url,
+        // 서버가 배포 시 generate_plan 을 재실행하므로, 자연어를 넘겨야 미리보기 flavor=실제 배포 flavor.
+        natural_language: projectData.requirements,
         repo_id: projectData.github_repo_url.split("/").pop() || projectData.github_repo_url,
         image_tag: "latest",
         env_config: {
@@ -191,15 +193,20 @@ export default function Predict() {
       let created: Project | null = null
       let persistError: string | null = null
       try {
+        const ctx = predictResponse?.extracted_context
         created = await projectsApi.createProject(
           {
             name: repoSlug,
             repository: projectData.github_repo_url,
             status: deployResponse.accepted ? "deployed" : "error",
-            lastDeployment,
+            last_deployment: lastDeployment,
             url: deployResponse.instance?.metadata?.public_url ?? null,
-            service_id: serviceId,
             instance_id: deployResponse.instance_id ?? null,
+            // 예측 컨텍스트를 함께 저장 — 안 보내면 upsert 가 기본값으로 덮어 재사용 컨텍스트가 죽는다.
+            service_type: ctx?.service_type,
+            time_slot: ctx?.time_slot,
+            runtime_env: ctx?.runtime_env,
+            expected_users: ctx?.expected_users ?? null,
           },
           state.token
         )
