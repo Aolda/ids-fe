@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
-import { Rocket, Github, Plus, ExternalLink } from "lucide-react"
+import { Rocket, Github, Plus, ExternalLink, RefreshCw } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 function EmptyState({ onStart }: { onStart: () => void }) {
@@ -120,6 +120,7 @@ export default function Predict() {
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false)
   const [deploymentSummary, setDeploymentSummary] = useState<DeploymentSummaryData | null>(null)
   const [isSummaryOpen, setIsSummaryOpen] = useState(false)
+  const [loadError, setLoadError] = useState(false)
 
   const loadProjects = useCallback(async () => {
     if (!state.token) {
@@ -129,8 +130,10 @@ export default function Predict() {
     try {
       const res = await projectsApi.getProjects(state.token)
       setProjects(res.projects ?? [])
+      setLoadError(false)
     } catch {
-      // 백엔드 미가동/조회 실패 → 빈 상태로 처리(온보딩 노출). 예측 자체는 별개.
+      // 조회 실패는 '아직 배포 없음'과 다르다 — 온보딩으로 위장하지 않고 오류+재시도를 노출한다.
+      setLoadError(true)
       setProjects([])
     }
   }, [state.token])
@@ -220,9 +223,11 @@ export default function Predict() {
       }
 
       // 저장 성공 → 새 카드를 낙관적으로 추가(2차 GET 불필요). 실패 → best-effort 재조회.
+      // 같은 repo 재배포 시 백엔드가 upsert 로 같은 id 를 돌려주므로, 중복 카드/키를 막기 위해
+      // 같은 id 는 걸러내고 앞에 새로 넣는다.
       if (created) {
         const appended = created
-        setProjects((prev) => [appended, ...(prev ?? [])])
+        setProjects((prev) => [appended, ...(prev ?? []).filter((p) => p.id !== appended.id)])
       } else {
         loadProjects()
       }
@@ -287,6 +292,24 @@ export default function Predict() {
           {[0, 1, 2].map((i) => (
             <Skeleton key={i} className="h-28 rounded-xl" />
           ))}
+        </div>
+      ) : loadError ? (
+        <div className="mt-8 rounded-2xl border border-dashed border-destructive/30 bg-destructive/5 px-6 py-16 text-center">
+          <h2 className="text-lg font-semibold">목록을 불러오지 못했어요</h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            백엔드에 연결하지 못했습니다. 예측은 그대로 시작할 수 있어요.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => {
+              setProjects(null)
+              loadProjects()
+            }}
+          >
+            <RefreshCw className="h-4 w-4" /> 다시 시도
+          </Button>
         </div>
       ) : projects.length === 0 ? (
         <EmptyState onStart={() => setIsProjectDialogOpen(true)} />
