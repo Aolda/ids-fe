@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -8,11 +9,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Logo } from "@/components/logo"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate, NavLink } from "react-router-dom"
-import { LogOut } from "lucide-react"
+import { LogOut, Menu } from "lucide-react"
 
 const navItems = [
   { to: "/predict", label: "대시보드" },
@@ -20,9 +22,17 @@ const navItems = [
   { to: "/settings", label: "설정" },
 ]
 
+const linkClass = ({ isActive }: { isActive: boolean }) =>
+  `rounded-md px-3 py-2 text-sm font-medium transition-smooth ${
+    isActive
+      ? "bg-accent text-foreground"
+      : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+  }`
+
 export function Navigation() {
   const { state, logout } = useAuth()
   const navigate = useNavigate()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -48,25 +58,38 @@ export function Navigation() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-8">
+            {/* 모바일 햄버거 — md 미만에서 nav 링크 대체 (없으면 프로젝트/설정 도달 불가) */}
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden" aria-label="메뉴 열기">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64">
+                <div className="mt-6 flex flex-col gap-1">
+                  {navItems.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setMobileOpen(false)}
+                      className={linkClass}
+                    >
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
+              </SheetContent>
+            </Sheet>
+
             <NavLink to="/predict" className="flex items-center gap-2.5">
               <Logo />
               <span className="text-lg font-semibold tracking-tight text-foreground">launcha</span>
             </NavLink>
 
-            {/* Navigation Links */}
+            {/* Navigation Links (데스크톱) */}
             <div className="hidden items-center gap-1 md:flex">
               {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `rounded-md px-3 py-2 text-sm font-medium transition-smooth ${
-                      isActive
-                        ? "bg-accent text-foreground"
-                        : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
-                    }`
-                  }
-                >
+                <NavLink key={item.to} to={item.to} className={linkClass}>
                   {item.label}
                 </NavLink>
               ))}
@@ -79,7 +102,7 @@ export function Navigation() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full" aria-label="계정 메뉴">
                   <Avatar className="h-8 w-8">
                     <AvatarFallback className="text-xs">{initials}</AvatarFallback>
                   </Avatar>

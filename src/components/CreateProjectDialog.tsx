@@ -128,9 +128,9 @@ export function CreateProjectDialog({ open, onOpenChange, onPredict, onDeploy }:
   }
 
   const handleOpenChange = (next: boolean) => {
-    // 배포(변경 작업) 진행 중엔 닫기(ESC/바깥클릭/X)를 막는다 — 늦게 끝난 배포가 재입력을
-    // 덮어쓰거나 유령 요약을 띄우는 레이스, ESC 로 취소된 듯 보이지만 VM 은 생성되는 오인을 방지.
-    if (!next && isDeploying) return
+    // 진행 중(예측·배포)엔 닫기(ESC/바깥클릭/X)를 막는다 — 늦게 끝난 요청이 재입력을 덮거나
+    // 닫힌 뒤 stale review 로 튀는 레이스, 배포를 ESC 로 취소한 듯 보이지만 VM 은 생성되는 오인을 방지.
+    if (!next && (isPredicting || isDeploying)) return
     if (!next) reset()
     onOpenChange(next)
   }
@@ -141,6 +141,7 @@ export function CreateProjectDialog({ open, onOpenChange, onPredict, onDeploy }:
   const question = predict?.question ?? null
   const missing = predict?.missing_fields ?? []
   const flavor = predict?.recommendations?.flavor ?? null
+  const cost = predict?.recommendations?.cost_per_day ?? null
   const ctx = predict?.extracted_context
   const series = predict?.predictions_24h ?? predict?.predictions?.values_24h ?? []
   const peak = Array.isArray(series) && series.length ? Math.max(...series) : null
@@ -253,6 +254,7 @@ export function CreateProjectDialog({ open, onOpenChange, onPredict, onDeploy }:
                     label="현재 vCPU / MEM"
                     value={ctx ? `${ctx.curr_cpu} / ${ctx.curr_mem}MB` : "—"}
                   />
+                  <Stat label="예상 비용" value={cost != null ? `$${cost}/day` : "—"} />
                 </div>
                 {missing.length > 0 && (
                   <p className="mt-3 border-t border-border pt-3 text-xs text-muted-foreground">

@@ -108,6 +108,16 @@ export interface ProjectsResponse {
   projects: Project[];
 }
 
+// 백엔드는 raw OpenStack 상태(active/build/shutoff…)나 기본값 'registered' 를 줄 수 있어,
+// FE 의 닫힌 union 으로 정규화하지 않으면 배포된 VM 이 'stopped' 로 표시·집계된다.
+function normalizeStatus(raw: unknown): Project["status"] {
+  const s = String(raw ?? "").toLowerCase();
+  if (s === "active" || s === "deployed" || s === "running") return "deployed";
+  if (s === "build" || s === "rebuild" || s === "building") return "building";
+  if (s === "error") return "error";
+  return "stopped";
+}
+
 export const projectsApi = {
   // 프로젝트 목록 조회
   getProjects: async (token: string): Promise<ProjectsResponse> => {
@@ -117,7 +127,11 @@ export const projectsApi = {
         'Authorization': `Bearer ${token}`
       }
     });
-    return handleResponse(res);
+    const data: ProjectsResponse = await handleResponse(res);
+    return {
+      ...data,
+      projects: (data.projects ?? []).map((p) => ({ ...p, status: normalizeStatus(p.status) })),
+    };
   },
 
   // 프로젝트 생성

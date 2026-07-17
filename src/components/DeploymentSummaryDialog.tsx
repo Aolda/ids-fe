@@ -45,9 +45,11 @@ export function DeploymentSummaryDialog({ open, onOpenChange, data }: Deployment
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[680px]">
         <DialogHeader>
-          <DialogTitle>VM 배포 완료</DialogTitle>
+          <DialogTitle>{deployResult.accepted ? "VM 배포 완료" : "예측 완료 · 배포 보류"}</DialogTitle>
           <DialogDescription>
-            {githubUrl} 저장소 기반으로 생성된 VM 정보를 한눈에 확인하세요.
+            {deployResult.accepted
+              ? `${githubUrl} 저장소 기반으로 생성된 VM 정보를 한눈에 확인하세요.`
+              : `${githubUrl} 예측·추천 결과입니다. 배포는 아직 진행되지 않았습니다.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -154,7 +156,9 @@ export function DeploymentSummaryDialog({ open, onOpenChange, data }: Deployment
             </section>
           ) : (
             <section className="text-sm text-muted-foreground">
-              OpenStack 인스턴스 세부 정보를 아직 받지 못했습니다. 잠시 후 새로고침해주세요.
+              {deployResult.accepted
+                ? "OpenStack 인스턴스 세부 정보를 아직 받지 못했습니다. 잠시 후 새로고침해주세요."
+                : "배포는 아직 진행되지 않았습니다 (인프라 연동 대기). 위 예측·추천 결과만 표시됩니다."}
             </section>
           )}
 

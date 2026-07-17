@@ -31,7 +31,7 @@ import { Search, Github, ExternalLink, Trash2, RefreshCw, Boxes } from "lucide-r
 
 const statusMeta: Record<Project["status"], { label: string; cls: string }> = {
   deployed: { label: "배포됨", cls: "bg-success/10 text-success border-success/20" },
-  building: { label: "빌드 중", cls: "bg-warning/10 text-warning border-warning/20" },
+  building: { label: "빌드 중", cls: "bg-primary/10 text-primary border-primary/20" },
   error: { label: "오류", cls: "bg-destructive/10 text-destructive border-destructive/20" },
   stopped: { label: "중지됨", cls: "bg-muted text-muted-foreground border-border" },
 }
@@ -148,7 +148,13 @@ function ProjectCard({
 
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="ghost" size="sm" disabled={isDeleting} className="text-muted-foreground hover:text-destructive">
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={isDeleting}
+              aria-label={`${p.name} 삭제`}
+              className="text-muted-foreground hover:text-destructive"
+            >
               <Trash2 className="h-4 w-4" />
             </Button>
           </AlertDialogTrigger>
@@ -181,6 +187,7 @@ export default function Projects() {
   const [searchQuery, setSearchQuery] = useState("")
   const [projects, setProjects] = useState<Project[] | null>(null)
   const [isDeleting, setIsDeleting] = useState<number | null>(null)
+  const [loadError, setLoadError] = useState(false)
 
   const loadProjects = useCallback(async () => {
     if (!state.token) {
@@ -190,9 +197,11 @@ export default function Projects() {
     try {
       const response = await projectsApi.getProjects(state.token)
       setProjects(response.projects ?? [])
+      setLoadError(false)
     } catch (err) {
-      // 백엔드 미가동/조회 실패 → 빈 목록(정직). 가짜 데이터로 대체하지 않는다.
+      // 조회 실패는 '서비스 없음'과 다르다 — 빈 온보딩으로 위장하지 않고 오류+재시도를 보여준다.
       console.warn("프로젝트 로드 실패", err)
+      setLoadError(true)
       setProjects([])
     }
   }, [state.token])
@@ -205,15 +214,22 @@ export default function Projects() {
     if (!state.token) return
     setIsDeleting(project.id)
     try {
-      await projectsApi.deleteProject(project.id, state.token)
-      // 인스턴스가 있으면 OpenStack 리소스도 정리 (service_id 는 백엔드가 안 씀 → instance_id 기준).
+      // VM(비싼 리소스) 을 먼저 정리한다. 실패하면 기록을 지우지 않는다 — 안 그러면 사용자는
+      // 지운 줄 알지만 OpenStack 에 고아 VM 이 남아 한정된 용량을 계속 잡아먹는다.
       if (project.instance_id) {
         try {
           await mcpApi.destroy(project.instance_id, state.token)
         } catch (destroyErr) {
           console.warn("리소스 삭제 실패:", destroyErr)
+          toast({
+            title: "VM 정리 실패 — 삭제를 취소했어요",
+            description: `${project.name}의 인스턴스(${project.instance_id})를 정리하지 못했습니다. 리소스가 아직 살아있어 기록을 지우지 않았습니다. 잠시 후 다시 시도해주세요.`,
+            variant: "destructive",
+          })
+          return
         }
       }
+      await projectsApi.deleteProject(project.id, state.token)
       toast({ title: "프로젝트 삭제 완료", description: `${project.name}를 삭제했습니다.` })
       setProjects((prev) => (prev ? prev.filter((p) => p.id !== project.id) : prev))
     } catch (err) {
@@ -267,6 +283,25 @@ export default function Projects() {
           {[0, 1, 2].map((i) => (
             <Skeleton key={i} className="h-40 rounded-xl" />
           ))}
+        </div>
+      ) : loadError ? (
+        <div className="mt-6 rounded-2xl border border-dashed border-destructive/30 bg-destructive/5 px-6 py-16 text-center">
+          <h3 className="font-semibold">목록을 불러오지 못했어요</h3>
+          <p className="mt-2 text-sm text-muted-foreground">
+            백엔드에 연결하지 못했습니다. 잠시 후 다시 시도해주세요.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-4"
+            onClick={() => {
+              setProjects(null)
+              loadProjects()
+            }}
+          >
+            <RefreshCw className="h-4 w-4" />
+            다시 시도
+          </Button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="mt-6 rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center">
