@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main   # 조직 레포 main에 커밋/머지될 때마다 실행
+  workflow_dispatch:   # 수동 트리거 — push 이벤트가 누락될 때 gh workflow run 으로 강제 동기화
 
 jobs:
   sync-fork:
