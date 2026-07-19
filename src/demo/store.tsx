@@ -289,6 +289,41 @@ export function useDemo(): DemoContextValue {
 // 공용 헬퍼
 export const avg = (a: number[]) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0)
 export const pct = (v: number) => `${Math.round(v * 100)}%`
+
+// p 퍼센타일(0~1). flavor 결정에 쓰는 p90 피크(S5)와 같은 개념.
+export const percentile = (arr: number[], p: number) => {
+  if (!arr.length) return 0
+  const s = [...arr].sort((a, b) => a - b)
+  return s[Math.min(s.length - 1, Math.round(p * (s.length - 1)))]
+}
+
+// 일반 사다리(memory 는 별도 분기라 제외) — 관측 기반 리사이징 추천용.
+export const FLAVOR_ORDER = [
+  "aolda.tiny",
+  "aolda.small",
+  "aolda.medium",
+  "aolda.large",
+  "aolda.xlarge",
+  "aolda.max",
+]
+
+/** 관측 p90 로 현재 등급이 적정한지 판단 — 관측→재추천 루프(#35)와 같은 개념. */
+export function resizeAdvice(flavor: string, p90: number): { rec: string; dir: "up" | "down" | "ok"; reason: string } {
+  const i = FLAVOR_ORDER.indexOf(flavor)
+  if (p90 > 0.78 && i >= 0 && i < FLAVOR_ORDER.length - 1)
+    return { rec: FLAVOR_ORDER[i + 1], dir: "up", reason: "관측 p90 부하가 높아 피크에서 부족할 수 있어요." }
+  if (p90 < 0.3 && i > 0)
+    return { rec: FLAVOR_ORDER[i - 1], dir: "down", reason: "관측 부하가 낮아 한 단계 낮춰 비용을 아낄 수 있어요." }
+  return { rec: flavor, dir: "ok", reason: "관측 부하가 현재 등급에 적정합니다." }
+}
+
+/** event_flag=1 행 = 감지된 이상(alerting). */
+export function anomaliesOf(metrics: MetricPoint[]) {
+  return metrics
+    .map((m, h) => ({ ...m, h }))
+    .filter((m) => m.event_flag === 1)
+    .map((m) => ({ hoursAgo: 23 - m.h, value: m.value, boost: m.traffic_boost_factor }))
+}
 export const statusMeta: Record<ServiceStatus, { label: string; cls: string }> = {
   deployed: { label: "배포됨", cls: "bg-success/10 text-success border-success/20" },
   building: { label: "빌드 중", cls: "bg-primary/10 text-primary border-primary/20" },
