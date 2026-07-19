@@ -13,9 +13,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, CheckCircle2, ShieldAlert, HelpCircle } from "lucide-react"
+import { AlertCircle, CheckCircle2, ShieldAlert, HelpCircle, Github, Sparkles, ArrowRight } from "lucide-react"
 import { PredictResponse } from "@/lib/backendAPI"
 import { cn } from "@/lib/utils"
+
+// 비전문 사용자의 '빈 칸' 부담을 덜어주는 예시 프리셋 — 클릭하면 자연어 요구사항을 채운다.
+const EXAMPLES: { label: string; text: string }[] = [
+  { label: "가벼운 웹서버", text: "간단한 개인 웹사이트예요. 하루 방문자 100명 안팎이고 특별한 피크는 없습니다." },
+  { label: "팀 API 서버", text: "백엔드 API 서버입니다. 동시 사용자 500명 정도이고 평일 오후에 트래픽이 몰려요." },
+  { label: "출시 이벤트", text: "출시 이벤트로 잠깐 수천 명이 몰릴 수 있어요. 피크에도 절대 느려지면 안 됩니다." },
+  { label: "DB·캐시", text: "데이터베이스/캐시 용도라 메모리가 넉넉해야 하고 안정성이 중요합니다." },
+]
 
 interface CreateProjectDialogProps {
   open: boolean
@@ -95,6 +103,10 @@ export function CreateProjectDialog({ open, onOpenChange, onPredict, onDeploy }:
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
+  const fillExample = (text: string) => {
+    setFormData((prev) => ({ ...prev, requirements: text }))
+  }
+
   // 1단계: 예측만. 결과의 게이트/되묻기를 보고 사용자가 배포를 결정한다.
   const handlePredict = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -153,33 +165,51 @@ export function CreateProjectDialog({ open, onOpenChange, onPredict, onDeploy }:
         {step === "input" ? (
           <>
             <DialogHeader>
-              <DialogTitle>새 배포 예측</DialogTitle>
-              <DialogDescription>
-                GitHub 저장소와 요구사항을 입력하면 리소스를 예측하고 추천 스펙을 보여드려요.
-                배포는 결과를 확인한 뒤 진행합니다.
-              </DialogDescription>
+              <div className="flex items-center gap-3">
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 text-left">
+                  <DialogTitle className="text-base">새 배포 예측</DialogTitle>
+                  <DialogDescription className="mt-0.5">
+                    GitHub 주소와 한 문장이면 충분해요. 결과를 확인한 뒤 배포합니다.
+                  </DialogDescription>
+                </div>
+              </div>
+              {/* 3단계 흐름 — 지금 어디쯤인지 알려준다 */}
+              <div className="mt-4 flex items-center gap-2 text-xs">
+                <span className="font-medium text-primary">1 · 입력</span>
+                <span className="h-px flex-1 bg-border" />
+                <span className="text-muted-foreground">2 · 검토</span>
+                <span className="h-px flex-1 bg-border" />
+                <span className="text-muted-foreground">3 · 배포</span>
+              </div>
             </DialogHeader>
             <form onSubmit={handlePredict}>
-              <div className="space-y-4 py-4">
+              <div className="space-y-5 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="github_repo_url">GitHub Repository URL</Label>
-                  <Input
-                    id="github_repo_url"
-                    name="github_repo_url"
-                    type="url"
-                    placeholder="https://github.com/username/repo"
-                    value={formData.github_repo_url}
-                    onChange={handleChange}
-                    required
-                    disabled={isPredicting}
-                  />
+                  <Label htmlFor="github_repo_url">GitHub 저장소</Label>
+                  <div className="relative">
+                    <Github className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="github_repo_url"
+                      name="github_repo_url"
+                      type="url"
+                      placeholder="github.com/username/repo"
+                      value={formData.github_repo_url}
+                      onChange={handleChange}
+                      required
+                      disabled={isPredicting}
+                      className="pl-9 font-mono text-sm"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="requirements">요청사항 (자연어)</Label>
+                  <Label htmlFor="requirements">어떤 서비스인가요?</Label>
                   <Textarea
                     id="requirements"
                     name="requirements"
-                    placeholder="예: 예상 사용자 수는 100명 정도이고, 피크 시간대는 오후 2시~4시입니다. 높은 가용성이 필요합니다."
+                    placeholder="예: 예상 사용자 100명 안팎, 평일 오후 2~4시에 트래픽이 몰려요. 잠깐이라도 느려지면 안 됩니다."
                     value={formData.requirements}
                     onChange={handleChange}
                     required
@@ -187,9 +217,20 @@ export function CreateProjectDialog({ open, onOpenChange, onPredict, onDeploy }:
                     rows={4}
                     className="resize-none"
                   />
-                  <p className="text-xs text-muted-foreground">
-                    사용 패턴과 성능 요구를 적어주세요. (예: 예상 사용자 수, 피크 시간대, 가용성/성능 요구 등)
-                  </p>
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <span className="text-xs text-muted-foreground">예시로 채우기</span>
+                    {EXAMPLES.map((ex) => (
+                      <button
+                        key={ex.label}
+                        type="button"
+                        onClick={() => fillExample(ex.text)}
+                        disabled={isPredicting}
+                        className="rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs text-muted-foreground transition-smooth hover:border-primary/40 hover:text-foreground disabled:opacity-50"
+                      >
+                        {ex.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 {error && (
                   <Alert variant="destructive">
@@ -203,7 +244,13 @@ export function CreateProjectDialog({ open, onOpenChange, onPredict, onDeploy }:
                   취소
                 </Button>
                 <Button type="submit" disabled={isPredicting}>
-                  {isPredicting ? "예측 중…" : "예측하기"}
+                  {isPredicting ? (
+                    "예측 중…"
+                  ) : (
+                    <>
+                      예측하기 <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
                 </Button>
               </DialogFooter>
             </form>
