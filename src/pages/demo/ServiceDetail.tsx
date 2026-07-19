@@ -361,35 +361,54 @@ export default function ServiceDetail() {
         </div>
       </div>
 
-      {/* 접속 가이드 */}
+      {/* 접속 · 제어 */}
       <div className="mt-4 rounded-xl border border-border bg-card p-5">
         <div className="flex items-center gap-2">
           <Terminal className="h-4 w-4 text-primary" />
-          <h2 className="font-semibold">접속 가이드</h2>
+          <h2 className="font-semibold">접속 · 제어</h2>
         </div>
         <p className="mt-0.5 text-xs text-muted-foreground">
-          Ubuntu 22.04 기반 VM 입니다. 등록한 SSH 키로 직접 접속·제어할 수 있어요.
+          이 서비스는 SSH 없이 자동 배포·관측됩니다 — IDS가 cloud-init으로 빌드·실행·헬스체크·상태를 대신 처리해요.
         </p>
-        <div className="mt-4 grid gap-3 lg:grid-cols-3">
+
+        {/* 기본 — 자동, SSH 닫힘 */}
+        <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-success/30 bg-success/5 p-3 text-sm">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-success" />
           <div>
-            <div className="mb-1.5 text-xs font-medium text-muted-foreground">1. SSH 접속</div>
-            <CopyCmd cmd={`ssh -i ~/.ssh/your-key ubuntu@${s.ip}`} />
-          </div>
-          <div>
-            <div className="mb-1.5 text-xs font-medium text-muted-foreground">2. 실행 중인 컨테이너 확인</div>
-            <CopyCmd cmd="docker ps" />
-          </div>
-          <div>
-            <div className="mb-1.5 text-xs font-medium text-muted-foreground">3. 로그 실시간 보기</div>
-            <CopyCmd cmd={`docker logs -f ${s.name}`} />
+            <p className="font-medium text-foreground">기본 — 접속 불필요, SSH는 닫혀 있어요</p>
+            <p className="mt-1 text-muted-foreground">
+              보안을 위해 22번(SSH)은 기본 차단이고 서비스 포트만 열립니다. 상태·로그·부하는 이 대시보드에서 확인하세요.
+            </p>
           </div>
         </div>
+
+        {/* 옵트인 — 직접 접속 */}
+        <div className="mt-3">
+          <div className="mb-2 text-xs font-medium text-muted-foreground">
+            직접 접속이 필요하면 (옵트인 · 본인 SSH 공개키 등록 시 22번 개방)
+          </div>
+          <div className="grid gap-3 lg:grid-cols-3">
+            <div>
+              <div className="mb-1.5 text-xs text-muted-foreground">SSH 접속</div>
+              <CopyCmd cmd={`ssh -i ~/.ssh/your-key ubuntu@${s.ip}`} />
+            </div>
+            <div>
+              <div className="mb-1.5 text-xs text-muted-foreground">컨테이너 확인</div>
+              <CopyCmd cmd="docker ps" />
+            </div>
+            <div>
+              <div className="mb-1.5 text-xs text-muted-foreground">로그 보기</div>
+              <CopyCmd cmd={`docker logs -f ${s.name}`} />
+            </div>
+          </div>
+        </div>
+
         <div className="mt-4 flex items-start gap-2.5 rounded-lg border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
           <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
           <div>
             <span className="font-medium text-foreground">보안</span> — SSH 개인키·OpenStack 자격증명·API 키는
-            전부 백엔드에만 있고 이 화면엔 <strong className="text-foreground">절대 노출되지 않습니다</strong>. 여기
-            보이는 건 공개 정보(IP·Instance ID·키페어 이름)뿐이에요. 접속은 본인이 등록한 SSH 키로 합니다.
+            전부 백엔드에만 있고 화면엔 <strong className="text-foreground">노출되지 않습니다</strong>. 여기 보이는 건
+            공개 정보(IP·Instance ID·키페어 이름)뿐이고, 접속은 본인이 등록한 SSH 키로 합니다.
           </div>
         </div>
       </div>
