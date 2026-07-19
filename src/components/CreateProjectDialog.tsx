@@ -163,9 +163,14 @@ export function CreateProjectDialog({ open, onOpenChange, onPredict, onDeploy }:
   const handlePredict = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
+    // 스킴 없이 입력해도(github.com/…) 받아준다 — 비전문 사용자가 첫 필드에서 막히지 않게.
+    const raw = formData.github_repo_url.trim()
+    const url = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+    const data = { ...formData, github_repo_url: url }
+    setFormData(data)
     setIsPredicting(true)
     try {
-      const result = await onPredict(formData)
+      const result = await onPredict(data)
       setPredict(result)
       setStep("review")
     } catch (err) {
@@ -250,7 +255,8 @@ export function CreateProjectDialog({ open, onOpenChange, onPredict, onDeploy }:
                     <Input
                       id="github_repo_url"
                       name="github_repo_url"
-                      type="url"
+                      type="text"
+                      inputMode="url"
                       placeholder="github.com/username/repo"
                       value={formData.github_repo_url}
                       onChange={handleChange}
