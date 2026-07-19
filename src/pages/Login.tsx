@@ -118,6 +118,17 @@ export default function Login() {
               </p>
             </>
           )}
+
+          {/* 내부 개발자 진입점 — SSO 연동 전 실 운영 앱 확인용. 계정 아는 사람만 통과. */}
+          <p className="mt-8 border-t border-border pt-6 text-center text-xs text-muted-foreground">
+            내부 테스트 ·{" "}
+            <Link
+              to="/dev-login"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              개발자 로그인
+            </Link>
+          </p>
         </div>
       </div>
     </div>
