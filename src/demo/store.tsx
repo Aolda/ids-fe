@@ -71,6 +71,13 @@ const clamp = (v: number) => Math.max(0, Math.min(1, Number(v.toFixed(3))))
 const R = (v: number) => Number(v.toFixed(3))
 const score = (cpu: number, mem: number, net: number) => clamp(0.5 * cpu + 0.3 * mem + 0.2 * net)
 
+// 결정론적 유사난수 [0,1) — (seed, i, salt) 로 재현된다. Math.random 대신 써서 새로고침해도
+// 같은 노이즈가 나오게(대시보드 숫자가 안 흔들리게) 한다.
+const unit = (seed: number, i: number, salt: number) => {
+  const x = Math.sin(seed * 127.1 + i * 311.7 + salt * 74.7) * 43758.5453
+  return x - Math.floor(x)
+}
+
 // 부하 프로파일(24h 형태) — cold-start 프로파일 시딩과 같은 개념의 대표 파형.
 type Profile = "steady-low" | "business-peak" | "spiky" | "flat-high"
 function profileCurve(kind: Profile): number[] {
@@ -95,22 +102,23 @@ function profileCurve(kind: Profile): number[] {
 function genMetricsFromCurve(
   load: number[],
   endMs: number,
-  opts: { eventAt?: number; boost?: number } = {},
+  opts: { eventAt?: number; boost?: number; seed?: number } = {},
 ): MetricPoint[] {
+  const seed = opts.seed ?? 0
   return load.map((l, i) => {
-    const cpu = clamp(l + (Math.random() - 0.5) * 0.04)
-    const mem = clamp(l * 0.82 + 0.1 + (Math.random() - 0.5) * 0.03)
-    const net = clamp(l * 0.55 + (Math.random() - 0.5) * 0.03)
+    const cpu = clamp(l + (unit(seed, i, 1) - 0.5) * 0.04)
+    const mem = clamp(l * 0.82 + 0.1 + (unit(seed, i, 2) - 0.5) * 0.03)
+    const net = clamp(l * 0.55 + (unit(seed, i, 3) - 0.5) * 0.03)
     const ts = new Date(endMs - (23 - i) * 3600_000).toISOString()
     return {
       ts,
       value: score(cpu, mem, net),
       cpu_mean: cpu,
-      cpu_max: clamp(cpu + 0.06 + Math.random() * 0.05),
-      cpu_std: R(0.02 + Math.random() * 0.03),
+      cpu_max: clamp(cpu + 0.06 + unit(seed, i, 4) * 0.05),
+      cpu_std: R(0.02 + unit(seed, i, 5) * 0.03),
       mem_mean: mem,
       mem_max: clamp(mem + 0.05),
-      mem_std: R(0.02 + Math.random() * 0.02),
+      mem_std: R(0.02 + unit(seed, i, 6) * 0.02),
       network_util: net,
       event_flag: opts.eventAt === i ? 1 : 0,
       traffic_boost_factor: opts.boost ?? 1.0,
@@ -188,7 +196,7 @@ export function serviceFromPredict(id: number, data: ProjectData, p: PredictResp
     cost_per_day: p.recommendations?.cost_per_day ?? 0,
     reasoning: ctx.reasoning ?? "",
     predictions_24h: predicted,
-    metrics: genMetricsFromCurve(predicted, now),
+    metrics: genMetricsFromCurve(predicted, now, { seed: id }),
     image: "ubuntu-22.04",
     network: "aolda-net",
     key_name: "aolda-key",
@@ -207,7 +215,10 @@ function seedService(
 ): DemoService {
   const now = Date.now()
   const predicted = profileCurve(kind)
-  const metrics = genMetricsFromCurve(predicted, now, kind === "spiky" ? { eventAt: 19, boost: 1.3 } : {})
+  const metrics = genMetricsFromCurve(predicted, now, {
+    seed: id,
+    ...(kind === "spiky" ? { eventAt: 19, boost: 1.3 } : {}),
+  })
   const spec = FLAVOR_SPECS[flavor]
   return {
     id,
