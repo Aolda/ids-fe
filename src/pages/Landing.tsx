@@ -4,7 +4,7 @@ import { Logo } from "@/components/logo"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Area, AreaChart, ResponsiveContainer, ReferenceDot, XAxis, YAxis } from "recharts"
-import { ArrowRight, Github, Activity, Boxes, BellRing, Terminal } from "lucide-react"
+import { ArrowRight, Github, Activity, Boxes, BellRing, FlaskConical } from "lucide-react"
 
 function LandingHeader() {
   const { state } = useAuth()
@@ -33,6 +33,9 @@ function LandingHeader() {
 
         <div className="flex items-center gap-1.5">
           <ThemeToggle />
+          <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
+            <Link to="/demo">데모</Link>
+          </Button>
           <Button asChild size="sm">
             <Link to={state.token ? "/predict" : "/login"}>
               {state.token ? "대시보드" : "시작하기"} <ArrowRight className="h-4 w-4" />
@@ -178,9 +181,9 @@ function Hero() {
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline">
-              <a href="#how">
-                <Terminal className="h-4 w-4" /> 작동 방식 보기
-              </a>
+              <Link to="/demo">
+                <FlaskConical className="h-4 w-4" /> 데모 둘러보기
+              </Link>
             </Button>
           </div>
 

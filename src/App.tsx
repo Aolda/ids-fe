@@ -8,6 +8,7 @@ import { Navigation } from "@/components/navigation";
 
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
+import Demo from "./pages/Demo";
 import Predict from "./pages/Predict";
 import Projects from "./pages/Projects";
 import Settings from "./pages/Settings";
@@ -35,7 +36,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 // 랜딩/로그인은 자체 헤더를 쓰므로 공용 상단 네비게이션을 숨긴다.
-const CHROMELESS_ROUTES = new Set(["/", "/login"]);
+const CHROMELESS_ROUTES = new Set(["/", "/login", "/demo"]);
 const GlobalNav = () => {
   const { pathname } = useLocation();
   if (CHROMELESS_ROUTES.has(pathname)) return null;
@@ -54,6 +55,7 @@ const App = () => (
               <GlobalNav />
               <Routes>
                 <Route path="/" element={<Landing />} />
+                <Route path="/demo" element={<Demo />} />
                 <Route
                   path="/login"
                   element={
