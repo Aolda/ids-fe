@@ -8,8 +8,27 @@ import { CreateProjectDialog, ProjectData } from "@/components/CreateProjectDial
 import { DeploymentSummaryDialog, DeploymentSummaryData } from "@/components/DeploymentSummaryDialog"
 import { PredictResponse } from "@/lib/backendAPI"
 import { DeployResponse, Project } from "@/lib/mcpAPI"
+import { DemandChart, Sparkline, MetricTile } from "@/components/observability"
 import { cn } from "@/lib/utils"
 import { Github, Plus, ExternalLink, ArrowRight, FlaskConical } from "lucide-react"
+
+// 데모용 24시간 관측 곡선(util[0,1]) — metric_history 에 쌓일 형태를 대변한다.
+const DEMO_DEMAND = [
+  0.22, 0.18, 0.16, 0.15, 0.17, 0.23, 0.34, 0.5, 0.62, 0.68, 0.66, 0.7, 0.74,
+  0.72, 0.67, 0.64, 0.69, 0.77, 0.85, 0.9, 0.82, 0.6, 0.42, 0.3,
+]
+const DEMO_CPU = DEMO_DEMAND.map((v) => Number(Math.min(0.95, v * 0.95).toFixed(3)))
+const DEMO_MEM = DEMO_DEMAND.map((v) => Number(Math.min(0.92, v * 0.8 + 0.12).toFixed(3)))
+const DEMO_NET = DEMO_DEMAND.map((v) => Number(Math.min(0.9, v * 0.6).toFixed(3)))
+const avg = (a: number[]) => a.reduce((s, x) => s + x, 0) / a.length
+const pct = (v: number) => `${Math.round(v * 100)}%`
+// per-VM 스파크라인 — 프로젝트별로 살짝 다른 부하 파형(결정론적).
+const projSpark = (seed: number): number[] =>
+  DEMO_DEMAND.map((v, h) =>
+    Number(
+      Math.max(0.05, Math.min(0.95, v * (0.72 + (seed % 3) * 0.11) + Math.sin((h + seed) * 0.7) * 0.05)).toFixed(3),
+    ),
+  )
 
 // ── 더미 데이터 ─────────────────────────────────────────────
 const SEED_PROJECTS: Project[] = [
@@ -110,12 +129,14 @@ export default function Demo() {
   const [summaryOpen, setSummaryOpen] = useState(false)
 
   const onPredict = async (data: ProjectData): Promise<PredictResponse> => {
-    await new Promise((r) => setTimeout(r, 650)) // '예측 중…' 상태를 보여주기 위한 지연
+    // 예측 처리단계(저장소 분석→해석→LSTM→등급)를 실제처럼 보여주기 위한 지연.
+    await new Promise((r) => setTimeout(r, 2800))
     return synthPredict(data)
   }
 
   const onDeploy = async (data: ProjectData, predict: PredictResponse): Promise<void> => {
-    await new Promise((r) => setTimeout(r, 700))
+    // 배포 프로비저닝 단계를 실제처럼 보여주기 위한 지연.
+    await new Promise((r) => setTimeout(r, 2200))
     const slug = data.github_repo_url.replace(/\/$/, "").split("/").pop() || "new-service"
     const instance_id = `vm-demo${String(projects.length + 1).padStart(2, "0")}`
     const newProject: Project = {
@@ -211,7 +232,40 @@ export default function Demo() {
           </span>
         </div>
 
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* 관측 개요 — DB(metric_history)에 쌓일 CPU·메모리·부하를 시각화 */}
+        <div className="mt-6 space-y-4">
+          <div className="rounded-xl border border-border bg-card p-5">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h2 className="font-semibold">리소스 수요 · 24시간</h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  배포된 서비스의 종합 부하(util). 피크(p90) 기준으로 VM 등급을 정합니다.
+                </p>
+              </div>
+              <div className="flex items-center gap-6 text-right">
+                <div>
+                  <div className="text-xs text-muted-foreground">현재</div>
+                  <div className="font-mono text-lg font-semibold text-foreground">{pct(DEMO_DEMAND[23])}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">피크</div>
+                  <div className="font-mono text-lg font-semibold text-primary">{pct(Math.max(...DEMO_DEMAND))}</div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-4">
+              <DemandChart data={DEMO_DEMAND} />
+            </div>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <MetricTile label="평균 CPU" value={pct(avg(DEMO_CPU))} spark={DEMO_CPU} />
+            <MetricTile label="평균 메모리" value={pct(avg(DEMO_MEM))} spark={DEMO_MEM} />
+            <MetricTile label="네트워크" value={pct(avg(DEMO_NET))} spark={DEMO_NET} />
+          </div>
+        </div>
+
+        <div className="mt-8 mb-3 text-sm font-medium text-muted-foreground">서비스</div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => {
             const meta = statusMeta[p.status] ?? statusMeta.stopped
             return (
@@ -230,6 +284,13 @@ export default function Demo() {
                   <Badge variant="outline" className={cn("shrink-0 font-medium", meta.cls)}>
                     {meta.label}
                   </Badge>
+                </div>
+                <div className="mt-4">
+                  <div className="mb-1 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">최근 부하</span>
+                    <span className="font-mono text-foreground">{pct(projSpark(p.id % 7)[23])}</span>
+                  </div>
+                  <Sparkline data={projSpark(p.id % 7)} />
                 </div>
                 <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
                   <span className="font-mono">{formatWhen(p.last_deployment)}</span>
