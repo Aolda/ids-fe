@@ -269,8 +269,6 @@ export default function Predict() {
     }
   }
 
-  const hasProjects = projects !== null && projects.length > 0
-
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -280,7 +278,7 @@ export default function Predict() {
             배포한 서비스와 예측 결과를 한 곳에서 확인하세요.
           </p>
         </div>
-        {hasProjects && (
+        {projects !== null && (
           <Button size="sm" onClick={() => setIsProjectDialogOpen(true)}>
             <Plus className="h-4 w-4" /> 새 배포 예측
           </Button>
@@ -295,21 +293,25 @@ export default function Predict() {
         </div>
       ) : loadError ? (
         <div className="mt-8 rounded-2xl border border-dashed border-destructive/30 bg-destructive/5 px-6 py-16 text-center">
-          <h2 className="text-lg font-semibold">목록을 불러오지 못했어요</h2>
+          <h2 className="text-lg font-semibold">백엔드에 연결하지 못했어요</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            백엔드에 연결하지 못했습니다. 예측은 그대로 시작할 수 있어요.
+            목록을 불러오지 못했습니다. 서버가 준비되면 목록·예측·배포가 정상 동작합니다.
           </p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-4"
-            onClick={() => {
-              setProjects(null)
-              loadProjects()
-            }}
-          >
-            <RefreshCw className="h-4 w-4" /> 다시 시도
-          </Button>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setProjects(null)
+                loadProjects()
+              }}
+            >
+              <RefreshCw className="h-4 w-4" /> 다시 시도
+            </Button>
+            <Button size="sm" onClick={() => setIsProjectDialogOpen(true)}>
+              <Plus className="h-4 w-4" /> 새 배포 예측
+            </Button>
+          </div>
         </div>
       ) : projects.length === 0 ? (
         <EmptyState onStart={() => setIsProjectDialogOpen(true)} />
