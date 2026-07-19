@@ -21,6 +21,9 @@ export const useNewPrediction = () => useContext(NewPredictionCtx)
 const NAV = [
   { to: "/demo", label: "대시보드", end: true },
   { to: "/demo/services", label: "프로젝트", end: false },
+  { to: "/demo/cluster", label: "클러스터", end: false },
+  { to: "/demo/activity", label: "활동", end: false },
+  { to: "/demo/guide", label: "도움말", end: false },
   { to: "/demo/settings", label: "설정", end: false },
 ]
 

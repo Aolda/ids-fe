@@ -27,8 +27,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   useEffect(() => {
-    // SSO 잠금 중엔 이전에 남은 데모 토큰을 신뢰하지 않는다 — 스테일 토큰으로 실앱(/predict) 우회 방지.
-    if (!SSO_ENABLED) {
+    // SSO 잠금 중엔 이전에 남은 데모 토큰을 신뢰하지 않는다(스테일 토큰으로 실앱 우회 방지).
+    // 단, 명시적 개발자 세션(ids_dev_session)은 예외로 유지한다 — 내부 테스트용(/dev-login).
+    if (!SSO_ENABLED && localStorage.getItem("ids_dev_session") !== "1") {
       localStorage.removeItem("token");
       localStorage.removeItem("email");
       setState({ token: null, email: null, initialized: true });
@@ -48,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("email");
+    localStorage.removeItem("ids_dev_session");
     setState({ token: null, email: null, initialized: true });
   };
 
