@@ -1,6 +1,7 @@
 // src/contexts/AuthContext.tsx
 
 import React, { createContext, useContext, useState, useEffect } from "react";
+import { SSO_ENABLED } from "@/lib/config";
 
 interface AuthState {
   token: string | null;
@@ -26,6 +27,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   useEffect(() => {
+    // SSO 잠금 중엔 이전에 남은 데모 토큰을 신뢰하지 않는다 — 스테일 토큰으로 실앱(/predict) 우회 방지.
+    if (!SSO_ENABLED) {
+      localStorage.removeItem("token");
+      localStorage.removeItem("email");
+      setState({ token: null, email: null, initialized: true });
+      return;
+    }
     const token = localStorage.getItem("token");
     const email = localStorage.getItem("email");
     setState({ token: token ?? null, email: email ?? null, initialized: true });
