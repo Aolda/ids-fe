@@ -14,74 +14,114 @@ import {
 } from "recharts"
 import { cn } from "@/lib/utils"
 
+interface Row {
+  h: number
+  v: number
+  p?: number
+}
 interface TooltipProps {
   active?: boolean
-  payload?: Array<{ value: number; payload: { h: number } }>
+  payload?: Array<{ payload: Row }>
 }
 
 function DemandTooltip({ active, payload }: TooltipProps) {
   if (!active || !payload?.length) return null
-  const p = payload[0]
+  const row = payload[0].payload
   return (
     <div className="rounded-lg border border-border bg-card px-3 py-2 text-xs shadow-card">
-      <div className="text-muted-foreground">{p.payload.h}시</div>
-      <div className="mt-0.5 font-mono font-medium text-foreground">부하 {Math.round(p.value * 100)}%</div>
+      <div className="text-muted-foreground">{row.h === 23 ? "지금" : `${23 - row.h}시간 전`}</div>
+      <div className="mt-0.5 font-mono font-medium text-foreground">관측 {Math.round(row.v * 100)}%</div>
+      {row.p != null && (
+        <div className="mt-0.5 font-mono text-muted-foreground">예측 {Math.round(row.p * 100)}%</div>
+      )}
     </div>
   )
 }
 
-// 24시간 리소스 수요(util) 영역 차트 — 축·툴팁 있는 정식 차트.
-export function DemandChart({ data, height = 208 }: { data: number[]; height?: number }) {
-  const rows = data.map((v, h) => ({ h, v }))
+// 24시간 리소스 수요(util) 영역 차트 — 축·툴팁·피크 마커. predicted 를 주면 예측선(점선)을 겹쳐 보여준다.
+export function DemandChart({
+  data,
+  predicted,
+  height = 208,
+}: {
+  data: number[]
+  predicted?: number[]
+  height?: number
+}) {
+  const rows: Row[] = data.map((v, h) => ({ h, v, p: predicted?.[h] }))
   const peak = rows.reduce((m, d, i, a) => (d.v > a[m].v ? i : m), 0)
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
-        <defs>
-          <linearGradient id="demandFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-            <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.5} />
-        <XAxis
-          dataKey="h"
-          tickLine={false}
-          axisLine={false}
-          interval={5}
-          tickFormatter={(h) => `${h}시`}
-          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-        />
-        <YAxis
-          domain={[0, 1]}
-          width={44}
-          tickLine={false}
-          axisLine={false}
-          tickFormatter={(v) => `${Math.round(Number(v) * 100)}%`}
-          tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
-        />
-        <Tooltip
-          content={<DemandTooltip />}
-          cursor={{ stroke: "hsl(var(--primary))", strokeOpacity: 0.4, strokeDasharray: "3 3" }}
-        />
-        <Area
-          type="monotone"
-          dataKey="v"
-          stroke="hsl(var(--primary))"
-          strokeWidth={2}
-          fill="url(#demandFill)"
-          isAnimationActive={false}
-        />
-        <ReferenceDot
-          x={rows[peak].h}
-          y={rows[peak].v}
-          r={4}
-          fill="hsl(var(--primary))"
-          stroke="hsl(var(--card))"
-          strokeWidth={2}
-        />
-      </AreaChart>
-    </ResponsiveContainer>
+    <>
+      {predicted && (
+        <div className="mb-2 flex items-center gap-4 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5">
+            <span className="h-0.5 w-4 rounded bg-primary" /> 관측
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-4 border-t border-dashed border-primary" /> 예측
+          </span>
+        </div>
+      )}
+      <ResponsiveContainer width="100%" height={height}>
+        <AreaChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+          <defs>
+            <linearGradient id="demandFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.5} />
+          <XAxis
+            dataKey="h"
+            tickLine={false}
+            axisLine={false}
+            interval={5}
+            tickFormatter={(h) => (h === 23 ? "지금" : `-${23 - h}h`)}
+            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+          />
+          <YAxis
+            domain={[0, 1]}
+            width={44}
+            tickLine={false}
+            axisLine={false}
+            tickFormatter={(v) => `${Math.round(Number(v) * 100)}%`}
+            tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+          />
+          <Tooltip
+            content={<DemandTooltip />}
+            cursor={{ stroke: "hsl(var(--primary))", strokeOpacity: 0.4, strokeDasharray: "3 3" }}
+          />
+          {predicted && (
+            <Area
+              type="monotone"
+              dataKey="p"
+              stroke="hsl(var(--primary))"
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
+              strokeOpacity={0.7}
+              fill="none"
+              isAnimationActive={false}
+            />
+          )}
+          <Area
+            type="monotone"
+            dataKey="v"
+            stroke="hsl(var(--primary))"
+            strokeWidth={2}
+            fill="url(#demandFill)"
+            isAnimationActive={false}
+          />
+          <ReferenceDot
+            x={rows[peak].h}
+            y={rows[peak].v}
+            r={4}
+            fill="hsl(var(--primary))"
+            stroke="hsl(var(--card))"
+            strokeWidth={2}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+    </>
   )
 }
 

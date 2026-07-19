@@ -8,7 +8,11 @@ import { Navigation } from "@/components/navigation";
 
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
-import Demo from "./pages/Demo";
+import DemoLayout from "./demo/DemoLayout";
+import DemoOverview from "./pages/demo/Overview";
+import DemoServices from "./pages/demo/Services";
+import DemoServiceDetail from "./pages/demo/ServiceDetail";
+import DemoSettings from "./pages/demo/Settings";
 import Predict from "./pages/Predict";
 import Projects from "./pages/Projects";
 import Settings from "./pages/Settings";
@@ -36,10 +40,11 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 // 랜딩/로그인은 자체 헤더를 쓰므로 공용 상단 네비게이션을 숨긴다.
-const CHROMELESS_ROUTES = new Set(["/", "/login", "/demo"]);
+// 랜딩/로그인/데모는 자체 헤더를 쓰므로 공용 상단 네비게이션을 숨긴다.
+const CHROMELESS_ROUTES = new Set(["/", "/login"]);
 const GlobalNav = () => {
   const { pathname } = useLocation();
-  if (CHROMELESS_ROUTES.has(pathname)) return null;
+  if (CHROMELESS_ROUTES.has(pathname) || pathname.startsWith("/demo")) return null;
   return <Navigation />;
 };
 
@@ -55,7 +60,12 @@ const App = () => (
               <GlobalNav />
               <Routes>
                 <Route path="/" element={<Landing />} />
-                <Route path="/demo" element={<Demo />} />
+                <Route path="/demo" element={<DemoLayout />}>
+                  <Route index element={<DemoOverview />} />
+                  <Route path="services" element={<DemoServices />} />
+                  <Route path="services/:id" element={<DemoServiceDetail />} />
+                  <Route path="settings" element={<DemoSettings />} />
+                </Route>
                 <Route
                   path="/login"
                   element={
