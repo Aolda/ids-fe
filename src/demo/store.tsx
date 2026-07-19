@@ -335,6 +335,54 @@ export function anomaliesOf(metrics: MetricPoint[]) {
     .filter((m) => m.event_flag === 1)
     .map((m) => ({ hoursAgo: 23 - m.h, value: m.value, boost: m.traffic_boost_factor }))
 }
+
+export type ActivityKind = "deploy" | "anomaly" | "resize"
+export interface ActivityEvent {
+  id: string
+  kind: ActivityKind
+  serviceId: number
+  serviceName: string
+  label: string
+  hoursAgo: number
+}
+
+/** 서비스들에서 시간순 활동 피드를 만든다 — 배포·이상감지·리사이징 권장(전부 우리가 산출하는 것). */
+export function activityFeed(services: DemoService[], nowMs: number): ActivityEvent[] {
+  const events: ActivityEvent[] = []
+  for (const s of services) {
+    const deployAgo = Math.max(0, Math.round((nowMs - new Date(s.last_deployment).getTime()) / 3600_000))
+    events.push({
+      id: `dep-${s.id}`,
+      kind: "deploy",
+      serviceId: s.id,
+      serviceName: s.name,
+      label: `${s.flavor} 등급으로 배포됨`,
+      hoursAgo: deployAgo,
+    })
+    for (const a of anomaliesOf(s.metrics)) {
+      events.push({
+        id: `anom-${s.id}-${a.hoursAgo}`,
+        kind: "anomaly",
+        serviceId: s.id,
+        serviceName: s.name,
+        label: `트래픽 급증 감지 · 부하 ${pct(a.value)}`,
+        hoursAgo: a.hoursAgo,
+      })
+    }
+    const adv = resizeAdvice(s.flavor, percentile(s.metrics.map((m) => m.value), 0.9))
+    if (adv.dir !== "ok") {
+      events.push({
+        id: `rs-${s.id}`,
+        kind: "resize",
+        serviceId: s.id,
+        serviceName: s.name,
+        label: `등급 ${adv.dir === "up" ? "상향" : "하향"} 권장 → ${adv.rec}`,
+        hoursAgo: 2,
+      })
+    }
+  }
+  return events.sort((a, b) => a.hoursAgo - b.hoursAgo)
+}
 export const statusMeta: Record<ServiceStatus, { label: string; cls: string }> = {
   deployed: { label: "배포됨", cls: "bg-success/10 text-success border-success/20" },
   building: { label: "빌드 중", cls: "bg-primary/10 text-primary border-primary/20" },
@@ -345,4 +393,22 @@ export const gateMeta: Record<Gate, { label: string; cls: string }> = {
   auto: { label: "자동 배포", cls: "bg-success/10 text-success border-success/20" },
   manual: { label: "검토 후 배포", cls: "bg-warning/10 text-warning border-warning/20" },
   block: { label: "배포 불가", cls: "bg-destructive/10 text-destructive border-destructive/20" },
+}
+
+// 아올다 소규모 클러스터 총 용량(고정) — capacity veto(S7/S8)가 관리하는 대상. 데모 대표값.
+export const CLUSTER_CAPACITY = { vcpu: 32, ram: 128, slots: 10 }
+
+/** 배포된 서비스들의 flavor 로 클러스터 사용량을 집계. */
+export function clusterUsage(services: DemoService[]) {
+  const usedVcpu = services.reduce((s, x) => s + (FLAVOR_SPECS[x.flavor]?.vcpu ?? 0), 0)
+  const usedRam = services.reduce((s, x) => s + (FLAVOR_SPECS[x.flavor]?.ram ?? 0), 0)
+  return {
+    usedVcpu,
+    usedRam,
+    freeVcpu: Math.max(0, CLUSTER_CAPACITY.vcpu - usedVcpu),
+    freeRam: Math.max(0, CLUSTER_CAPACITY.ram - usedRam),
+    vcpuPct: Math.min(1, usedVcpu / CLUSTER_CAPACITY.vcpu),
+    ramPct: Math.min(1, usedRam / CLUSTER_CAPACITY.ram),
+    slotsUsed: services.length,
+  }
 }

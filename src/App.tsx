@@ -8,10 +8,14 @@ import { Navigation } from "@/components/navigation";
 
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
+import DevLogin from "./pages/DevLogin";
 import DemoLayout from "./demo/DemoLayout";
 import DemoOverview from "./pages/demo/Overview";
 import DemoServices from "./pages/demo/Services";
 import DemoServiceDetail from "./pages/demo/ServiceDetail";
+import DemoCluster from "./pages/demo/Cluster";
+import DemoActivity from "./pages/demo/Activity";
+import DemoGuide from "./pages/demo/Guide";
 import DemoSettings from "./pages/demo/Settings";
 import Predict from "./pages/Predict";
 import Projects from "./pages/Projects";
@@ -41,7 +45,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
 // 랜딩/로그인은 자체 헤더를 쓰므로 공용 상단 네비게이션을 숨긴다.
 // 랜딩/로그인/데모는 자체 헤더를 쓰므로 공용 상단 네비게이션을 숨긴다.
-const CHROMELESS_ROUTES = new Set(["/", "/login"]);
+const CHROMELESS_ROUTES = new Set(["/", "/login", "/dev-login"]);
 const GlobalNav = () => {
   const { pathname } = useLocation();
   if (CHROMELESS_ROUTES.has(pathname) || pathname.startsWith("/demo")) return null;
@@ -64,6 +68,9 @@ const App = () => (
                   <Route index element={<DemoOverview />} />
                   <Route path="services" element={<DemoServices />} />
                   <Route path="services/:id" element={<DemoServiceDetail />} />
+                  <Route path="cluster" element={<DemoCluster />} />
+                  <Route path="activity" element={<DemoActivity />} />
+                  <Route path="guide" element={<DemoGuide />} />
                   <Route path="settings" element={<DemoSettings />} />
                 </Route>
                 <Route
@@ -71,6 +78,14 @@ const App = () => (
                   element={
                     <PublicRoute>
                       <Login />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/dev-login"
+                  element={
+                    <PublicRoute>
+                      <DevLogin />
                     </PublicRoute>
                   }
                 />
