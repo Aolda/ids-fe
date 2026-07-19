@@ -51,6 +51,14 @@ if (import.meta.env.PROD) {
   }
 }
 
+// SSO(Keycloak) 연동 전까지 실제 로그인을 잠근다. 연동되면 true 로 바꾸면 로그인이 열린다.
+// 그동안 사용자는 /demo 로 전체 흐름을 체험한다.
+export const SSO_ENABLED: boolean = false;
+
+// fetch 기본 타임아웃(ms). 백엔드가 죽어 있어도 20초씩 매달리지 않고 이 시간 안에 실패한다.
+// 배포/예측처럼 오래 걸리는 호출은 호출부에서 더 큰 값을 넘긴다.
+export const REQUEST_TIMEOUT_MS = 10000;
+
 // 추가 설정이 필요한 경우 여기에 추가
 export const config = {
   apiBaseUrl: API_BASE_URL,
