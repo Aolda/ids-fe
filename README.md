@@ -1,199 +1,109 @@
-# LaunchA Cloud - Frontend
+# launcha — Frontend (ids-fe)
 
-React + TypeScript 기반 MCP 예측/이상탐지 플랫폼 프론트엔드
+GitHub 주소와 한 문장이면 리소스 수요를 예측하고 알맞은 VM 등급을 골라 배포·관측까지 이어가는
+지능형 배포 서비스의 웹 프론트엔드. 아주대학교 **아올다(Aolda) OpenStack** 기반이고, 백엔드는
+별도 레포 **ids-be**(FastAPI)다.
 
 ## 기술 스택
 
 - **Framework**: React 18 + TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS
-- **UI Components**: shadcn/ui
+- **Build**: Vite
+- **Styling**: Tailwind CSS + shadcn/ui (Radix)
 - **Routing**: React Router v6
-- **State Management**: Context API + TanStack Query
-- **Deployment**: Vercel
+- **State/Data**: Context API + TanStack Query
+- **Charts**: Recharts
+- **Deploy**: Vercel
+
+## 인증 — 아주대 SSO 단일
+
+이메일/비밀번호 로그인과 자체 회원가입은 없다. 신원은 **아주대학교 SSO(Keycloak)** 가 확인한다.
+현재는 연동 전이라 데모 세션으로 동작하며, 로그인 화면의 SSO 버튼이 데모 진입점이다.
+(Keycloak redirect/callback 연동은 진행 예정.)
+
+## 핵심 흐름
+
+```
+GitHub URL + 자연어
+   → 예측(POST /api/v1/plans)             추천 flavor·24h 부하·예상 비용·자동화 게이트
+   → 검토 단계에서 게이트에 따라 분기
+       · block  → 배포 불가(근거 표시)
+       · manual → "승인하고 배포"
+       · auto   → "배포하기"
+   → 배포(POST /api/v1/deploy)
+   → 삭제 시 VM(OpenStack)을 먼저 정리한 뒤 기록 삭제(고아 VM 방지)
+```
+
+flavor 결정과 최종 검증은 백엔드(결정론)가 소유한다. 프론트는 예측을 **보여주고 게이트를 소비**할 뿐,
+스스로 flavor 를 정하거나 block 을 우회하지 않는다.
 
 ## 프로젝트 구조
 
 ```
 mcp_web/
 ├── src/
-│   ├── pages/          # 페이지 컴포넌트
-│   │   ├── Login.tsx
-│   │   ├── Signup.tsx
-│   │   ├── Predict.tsx (Dashboard)
-│   │   ├── Projects.tsx
-│   │   └── Settings.tsx
-│   ├── components/     # 재사용 가능한 컴포넌트
-│   │   ├── CreateProjectDialog.tsx
-│   │   ├── navigation.tsx
+│   ├── pages/
+│   │   ├── Landing.tsx        # 로그인 전 랜딩
+│   │   ├── Login.tsx          # SSO 단일 로그인
+│   │   ├── Predict.tsx        # 대시보드(빈 상태 중심)
+│   │   ├── Projects.tsx       # 배포한 서비스 목록/삭제
+│   │   └── Settings.tsx       # 계정(SSO)·테마
+│   ├── components/
+│   │   ├── CreateProjectDialog.tsx     # 예측→검토→배포 2단계 위저드
+│   │   ├── DeploymentSummaryDialog.tsx
+│   │   ├── navigation.tsx              # 데스크톱/모바일(시트) 내비
 │   │   └── ...
-│   ├── contexts/       # Context API
-│   │   └── AuthContext.tsx
-│   ├── lib/           # API 및 유틸리티
-│   │   ├── authAPI.ts
-│   │   ├── mcpAPI.ts
-│   │   └── config.ts
-│   └── App.tsx        # 라우팅 설정
-├── vercel.json        # Vercel 배포 설정
+│   ├── contexts/AuthContext.tsx
+│   ├── lib/
+│   │   ├── backendAPI.ts      # 예측 클라이언트(/api/v1/plans)
+│   │   ├── mcpAPI.ts          # 배포/프로젝트 클라이언트
+│   │   └── config.ts          # base URL(환경변수)
+│   └── App.tsx
+├── vercel.json
 └── package.json
 ```
 
-## 환경 변수 설정
+## 환경 변수
 
-### 개발 환경
+세 base URL 모두 **IDS 백엔드 origin 하나**를 가리킨다(구 MCP의 포트 이원화 없음).
 
-`.env` 파일 생성 (또는 `.env.local`):
+| 변수 | 개발 기본 | 프로덕션 |
+|---|---|---|
+| `VITE_API_BASE_URL` | `http://localhost:8000` | `https://api.launcha.cloud` |
+| `VITE_DEPLOY_API_BASE_URL` | 〃 | 〃 |
+| `VITE_BACKEND_API_BASE_URL` | 〃 | 〃 |
 
-```env
-VITE_API_BASE_URL=http://localhost:8000
-```
+> ⚠️ 프로덕션 환경 변수는 **Vercel이 병언님 개인 fork 계정에 연동**돼 있어, 값 변경이 필요하면
+> 병언님께 알려야 한다. 코드에서 임의로 바꾸지 말 것.
 
-### 프로덕션 환경 (Vercel)
-
-Vercel 대시보드에서 환경 변수 설정:
-
-```
-VITE_API_BASE_URL=https://your-api-domain.com
-```
-
-## 설치 및 실행
+## 개발 · 빌드
 
 ```bash
-# 의존성 설치
 npm install
-
-# 개발 서버 실행
-npm run dev
-
-# 프로덕션 빌드
-npm run build
-
-# 빌드 미리보기
-npm run preview
+npm run dev       # 개발 서버
+npm run build     # 프로덕션 빌드(tsc + vite)
+npm run preview   # 빌드 미리보기
+npm run lint      # eslint
 ```
 
-## API 엔드포인트
+## 배포 파이프라인
 
-### 인증 API (`/auth`)
-
-- `POST /auth/signup` - 회원가입
-- `POST /auth/login` - 로그인
-- `DELETE /auth/delete` - 계정 삭제
-
-### 예측 API (`/plans`)
-
-- `POST /plans` - Context JSON을 기반으로 예측 요청
-
-**요청 예시:**
-```json
-{
-  "service_id": "svc-1234567890",
-  "metric_name": "cpu_usage",
-  "context": {
-    "github_url": "https://github.com/username/repo",
-    "expected_users": 100
-  }
-}
+```
+Aolda/ids-fe main 머지
+   → sync-fork GitHub Action 이 병언님 fork 로 동기화 (FORK_SYNC_PAT 필요)
+   → Vercel 이 fork push 감지 → 자동 빌드·배포 → https://launcha.cloud
 ```
 
-**응답 예시:**
-```json
-{
-  "prediction": {
-    "service_id": "svc-1234567890",
-    "metric_name": "cpu_usage",
-    "model_version": "web_normal_v1",
-    "generated_at": "2025-01-19T...",
-    "predictions": [...]
-  },
-  "recommended_flavor": "medium",
-  "expected_cost_per_day": 2.8,
-  "generated_at": "2025-01-19T...",
-  "notes": "(더미) cost/flavor 룰 기반 산정"
-}
-```
+Vercel은 조직 레포가 아니라 **병언님 fork**에 연결돼 있다. 그래서 main 에 머지해도 fork 동기화가
+돌아야 배포가 갱신된다.
 
-## 배포 (Vercel)
+## 백엔드 (ids-be)
 
-### 1. Vercel CLI 사용
+FastAPI, 별도 레포. 프론트가 쓰는 주요 엔드포인트:
 
-```bash
-# Vercel CLI 설치
-npm i -g vercel
-
-# 배포
-vercel
-
-# 프로덕션 배포
-vercel --prod
-```
-
-### 2. GitHub 연동
-
-1. GitHub 저장소에 코드 푸시
-2. Vercel 대시보드에서 프로젝트 import
-3. 환경 변수 설정 (`VITE_API_BASE_URL`)
-4. 자동 배포 완료
-
-### 3. 환경 변수 설정
-
-Vercel 대시보드 → Settings → Environment Variables:
-
-- `VITE_API_BASE_URL`: 백엔드 API URL
-
-## 주요 기능
-
-### 1. 인증 시스템
-- JWT 기반 토큰 인증
-- localStorage에 토큰 저장
-- PrivateRoute/PublicRoute로 라우팅 보호
-- 테스트 계정 로그인 기능
-
-### 2. 프로젝트 생성
-- GitHub Repository URL 입력
-- 예상 사용자 수 입력
-- Context JSON 자동 생성 및 MCP API로 전송
-- 자동 배포 트리거
-
-### 3. 대시보드
-- Metrics Overview (프로젝트 수, 배포 수, VM 수 등)
-- Resource Usage Charts (CPU/Memory)
-- Activity Log
-
-## 백엔드 연동
-
-백엔드 API는 `mcp_core` 디렉토리에 있습니다.
-
-### CORS 설정
-
-백엔드(`mcp_core/app/main.py`)에서 CORS가 설정되어 있어야 합니다:
-
-```python
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:8080",
-        "http://localhost:5173",
-        "https://*.vercel.app",
-    ],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-```
-
-## 문제 해결
-
-### CORS 에러
-
-- 백엔드의 CORS 설정 확인
-- 프론트엔드 도메인이 `allow_origins`에 포함되어 있는지 확인
-
-### API 연결 실패
-
-- `VITE_API_BASE_URL` 환경 변수 확인
-- 백엔드 서버가 실행 중인지 확인
-- 네트워크 탭에서 요청/응답 확인
+- `POST /api/v1/plans` — 예측 `{ github_url, natural_language }` → 추천 flavor·`automation_mode`·`predictions_24h`·비용 등
+- `POST /api/v1/deploy` / `DELETE /api/v1/deploy/{instance_id}` — 배포/삭제 (Bearer, `IDS_API_TOKEN` 설정 시)
+- `GET|POST|DELETE /api/v1/projects` — 프로젝트 CRUD
+- `POST /api/v1/recommendations/re-evaluate` — 관측→재추천
 
 ## 라이선스
 
