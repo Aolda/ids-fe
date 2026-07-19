@@ -14,21 +14,6 @@ const PROD_DEFAULT_DEPLOY = "https://api.launcha.cloud";
 const isProdEnv = Boolean(import.meta.env.PROD);
 const isDev = !isProdEnv;
 
-// 개발자 모드 런타임 오버라이드 — 배포된 앱에서도 재빌드 없이 백엔드 origin 을 바꿀 수 있게 한다.
-// 공개 백엔드(api.launcha.cloud)가 아직 안 떠 있어, /dev 콘솔에서 로컬/터널 백엔드로 붙여 실제 흐름을 돌려보기 위함.
-// IDS 백엔드는 단일 origin 이라 세 base URL 모두 이 값 하나로 덮는다. 저장 후 새로고침하면 적용.
-export const DEV_API_OVERRIDE_KEY = "ids_dev_api_base";
-function devApiOverride(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const v = window.localStorage.getItem(DEV_API_OVERRIDE_KEY);
-    return v && v.trim() ? v.trim().replace(/\/+$/, "") : null;
-  } catch {
-    return null;
-  }
-}
-const DEV_API = devApiOverride();
-
 // MCP Core API URL (plans, auth 등 - 8000 포트)
 // 로컬 개발: http://localhost:8000
 // 프로덕션: VITE_API_BASE_URL → 없다면 현재 Origin(또는 api.launcha.cloud) 사용
@@ -36,7 +21,6 @@ const DEV_API = devApiOverride();
 // 프론트(Vercel)와 백엔드는 서로 다른 origin 이므로, 미설정 시 프론트 자기 origin 이 아니라
 // 실제 백엔드 기본 도메인으로 폴백해야 대부분의 API 호출이 엉뚱한 호스트로 가지 않는다.
 export const API_BASE_URL =
-  DEV_API ||
   import.meta.env.VITE_API_BASE_URL ||
   (isDev ? "http://localhost:8000" : PROD_DEFAULT_API);
 
@@ -44,7 +28,6 @@ export const API_BASE_URL =
 // 로컬 개발: http://localhost:8000
 // 프로덕션: VITE_DEPLOY_API_BASE_URL → 없으면 api.launcha.cloud
 export const DEPLOY_API_BASE_URL =
-  DEV_API ||
   import.meta.env.VITE_API_BASE_URL ||
   (isDev ? "http://localhost:8000" : PROD_DEFAULT_DEPLOY);
 
@@ -52,7 +35,6 @@ export const DEPLOY_API_BASE_URL =
 // 로컬 개발: http://localhost:8000
 // 프로덕션: VITE_BACKEND_API_BASE_URL → 없으면 API_BASE_URL과 동일한 Origin 사용
 export const BACKEND_API_BASE_URL =
-  DEV_API ||
   import.meta.env.VITE_BACKEND_API_BASE_URL ||
   (isDev ? "http://localhost:8000" : API_BASE_URL);
 

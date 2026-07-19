@@ -20,7 +20,7 @@ import DemoSettings from "./pages/demo/Settings";
 import Predict from "./pages/Predict";
 import Projects from "./pages/Projects";
 import Settings from "./pages/Settings";
-import DevConsole from "./pages/DevConsole";
+import Collab from "./pages/Collab";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient({
@@ -46,7 +46,7 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
 
 // 랜딩/로그인은 자체 헤더를 쓰므로 공용 상단 네비게이션을 숨긴다.
 // 랜딩/로그인/데모는 자체 헤더를 쓰므로 공용 상단 네비게이션을 숨긴다.
-const CHROMELESS_ROUTES = new Set(["/", "/login", "/dev-login", "/dev"]);
+const CHROMELESS_ROUTES = new Set(["/", "/login", "/dev-login"]);
 const GlobalNav = () => {
   const { pathname } = useLocation();
   if (CHROMELESS_ROUTES.has(pathname) || pathname.startsWith("/demo")) return null;
@@ -115,10 +115,10 @@ const App = () => (
                   }
                 />
                 <Route
-                  path="/dev"
+                  path="/collab"
                   element={
                     <PrivateRoute>
-                      <DevConsole />
+                      <Collab />
                     </PrivateRoute>
                   }
                 />

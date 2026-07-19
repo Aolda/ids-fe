@@ -14,7 +14,7 @@ import { Logo } from "@/components/logo"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate, NavLink } from "react-router-dom"
-import { LogOut, Menu, Wrench } from "lucide-react"
+import { LogOut, Menu, Users } from "lucide-react"
 
 const navItems = [
   { to: "/predict", label: "대시보드" },
@@ -44,7 +44,7 @@ export function Navigation() {
     return null
   }
 
-  // 개발자 로그인(/dev-login)으로 들어온 세션에만 개발자 콘솔 진입점을 노출한다.
+  // 개발자 로그인(/dev-login)으로 들어온 내부 세션에만 협업(/collab) 진입점을 노출한다.
   const devSession =
     typeof window !== "undefined" && window.localStorage.getItem("ids_dev_session") === "1"
 
@@ -121,9 +121,9 @@ export function Navigation() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {devSession && (
-                  <DropdownMenuItem onClick={() => navigate("/dev")}>
-                    <Wrench className="mr-2 h-4 w-4" />
-                    <span>개발자 콘솔</span>
+                  <DropdownMenuItem onClick={() => navigate("/collab")}>
+                    <Users className="mr-2 h-4 w-4" />
+                    <span>협업</span>
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={handleLogout}>
