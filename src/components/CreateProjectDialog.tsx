@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { AlertCircle, CheckCircle2, ShieldAlert, HelpCircle, Github, Sparkles, ArrowRight } from "lucide-react"
+import { AlertCircle, CheckCircle2, ShieldAlert, HelpCircle, Github, Sparkles, ArrowRight, Loader2, Circle } from "lucide-react"
 import { PredictResponse } from "@/lib/backendAPI"
 import { cn } from "@/lib/utils"
 
@@ -76,6 +76,58 @@ function Stat({ label, value }: { label: string; value: React.ReactNode }) {
     <div>
       <div className="text-xs text-muted-foreground">{label}</div>
       <div className="mt-0.5 font-mono text-sm text-foreground">{value}</div>
+    </div>
+  )
+}
+
+// 실제 파이프라인 단계 — 예측/배포가 도는 동안 "뭘 하고 있는지"를 순차로 보여준다.
+// 데모에선 합성 지연으로, 실제 앱에선 진짜 요청이 도는 동안 애니메이션된다(마지막 단계 유지).
+const PREDICT_STEPS = [
+  "저장소 분석 (Dockerfile · 포트 · 의존성)",
+  "요구사항 해석 (자연어 → 컨텍스트)",
+  "24시간 부하 예측 (LSTM)",
+  "최적 VM 등급 결정",
+]
+const DEPLOY_STEPS = ["배포 계획 검증", "OpenStack VM 프로비저닝", "네트워크 · cloud-init 설정"]
+
+function ProcessingView({ steps, stepMs = 750 }: { steps: string[]; stepMs?: number }) {
+  const [current, setCurrent] = useState(0)
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = []
+    for (let i = 1; i < steps.length; i++) {
+      timers.push(setTimeout(() => setCurrent(i), i * stepMs))
+    }
+    return () => timers.forEach(clearTimeout)
+  }, [steps, stepMs])
+  return (
+    <div className="space-y-3.5 py-8">
+      {steps.map((s, i) => {
+        const done = i < current
+        const active = i === current
+        return (
+          <div key={s} className="flex items-center gap-3">
+            {done ? (
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+            ) : active ? (
+              <Loader2 className="h-4 w-4 shrink-0 animate-spin text-primary" />
+            ) : (
+              <Circle className="h-4 w-4 shrink-0 text-muted-foreground/30" />
+            )}
+            <span
+              className={cn(
+                "text-sm",
+                done
+                  ? "text-muted-foreground"
+                  : active
+                    ? "font-medium text-foreground"
+                    : "text-muted-foreground/50",
+              )}
+            >
+              {s}
+            </span>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -186,6 +238,10 @@ export function CreateProjectDialog({ open, onOpenChange, onPredict, onDeploy }:
               </div>
             </DialogHeader>
             <form onSubmit={handlePredict}>
+              {isPredicting ? (
+                <ProcessingView steps={PREDICT_STEPS} />
+              ) : (
+                <>
               <div className="space-y-5 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="github_repo_url">GitHub 저장소</Label>
@@ -253,6 +309,8 @@ export function CreateProjectDialog({ open, onOpenChange, onPredict, onDeploy }:
                   )}
                 </Button>
               </DialogFooter>
+                </>
+              )}
             </form>
           </>
         ) : (
@@ -261,6 +319,10 @@ export function CreateProjectDialog({ open, onOpenChange, onPredict, onDeploy }:
               <DialogTitle>예측 결과 검토</DialogTitle>
               <DialogDescription>추천 스펙과 자동화 판정을 확인하고 배포를 진행하세요.</DialogDescription>
             </DialogHeader>
+            {isDeploying ? (
+              <ProcessingView steps={DEPLOY_STEPS} />
+            ) : (
+              <>
             <div className="space-y-4 py-4">
               {/* 자동화 게이트 배너 */}
               <div className={cn("flex items-start gap-2.5 rounded-lg border p-3 text-sm", gm.cls)}>
@@ -335,6 +397,8 @@ export function CreateProjectDialog({ open, onOpenChange, onPredict, onDeploy }:
                 </Button>
               )}
             </DialogFooter>
+              </>
+            )}
           </>
         )}
       </DialogContent>
