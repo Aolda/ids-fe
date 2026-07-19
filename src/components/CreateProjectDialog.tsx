@@ -17,12 +17,15 @@ import { AlertCircle, CheckCircle2, ShieldAlert, HelpCircle, Github, Sparkles, A
 import { PredictResponse } from "@/lib/backendAPI"
 import { cn } from "@/lib/utils"
 
-// 비전문 사용자의 '빈 칸' 부담을 덜어주는 예시 프리셋 — 클릭하면 자연어 요구사항을 채운다.
+// 비전문 사용자(특히 학생)의 '빈 칸' 부담을 덜어주는 예시 프리셋 — 클릭하면 자연어 요구사항을 채운다.
 const EXAMPLES: { label: string; text: string }[] = [
-  { label: "가벼운 웹서버", text: "간단한 개인 웹사이트예요. 하루 방문자 100명 안팎이고 특별한 피크는 없습니다." },
-  { label: "팀 API 서버", text: "백엔드 API 서버입니다. 동시 사용자 500명 정도이고 평일 오후에 트래픽이 몰려요." },
+  { label: "개인 웹사이트", text: "간단한 개인 웹사이트예요. 하루 방문자 100명 안팎이고 특별한 피크는 없습니다." },
+  { label: "졸업작품 시연", text: "졸업작품 시연용이에요. 평소엔 한산하고 심사·발표 때만 잠깐 사람이 몰립니다." },
+  { label: "수업 실습 서버", text: "강의 실습용 서버입니다. 학기 중 실습 시간에 수강생 40명 정도가 동시에 접속해요." },
+  { label: "동아리 사이트", text: "동아리 홍보용 사이트예요. 하루 수십 명 방문하고 특별한 피크는 없습니다." },
+  { label: "팀 프로젝트 API", text: "팀 프로젝트 백엔드 API입니다. 동시 사용자 500명 정도이고 평일 오후에 트래픽이 몰려요." },
+  { label: "AI 챗봇", text: "간단한 AI 챗봇 서비스예요. 추론 때문에 메모리가 넉넉해야 하고 안정적이어야 합니다." },
   { label: "출시 이벤트", text: "출시 이벤트로 잠깐 수천 명이 몰릴 수 있어요. 피크에도 절대 느려지면 안 됩니다." },
-  { label: "DB·캐시", text: "데이터베이스/캐시 용도라 메모리가 넉넉해야 하고 안정성이 중요합니다." },
 ]
 
 interface CreateProjectDialogProps {
